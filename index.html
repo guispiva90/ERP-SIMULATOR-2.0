@@ -1,0 +1,2865 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Simulator - Sistema de Gestão Industrial & MES</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- html2pdf.js CDN for robust PDF generation and download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-op-sheet, #printable-op-sheet * { visibility: visible; }
+      #printable-op-sheet { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 flex h-screen overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-[#0a0f1d] border-r border-slate-800 text-slate-300 flex flex-col justify-between shrink-0 select-none shadow-2xl z-30">
+    <div>
+      <div class="p-6 border-b border-slate-800/80">
+        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i data-lucide="layers" class="w-5 h-5"></i>
+          </span>
+          ERP Simulator
+        </h1>
+        <p class="text-xs text-slate-400 mt-1 pl-10">Gestão Industrial & MES</p>
+      </div>
+
+      <!-- NAVIGATION -->
+      <nav class="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-175px)] custom-scrollbar">
+        <button onclick="nav('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/30">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i> Dashboard
+        </button>
+        <button onclick="nav('fornecedores')" id="nav-fornecedores" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="truck" class="w-4 h-4"></i> Fornecedores
+        </button>
+        <button onclick="nav('clientes')" id="nav-clientes" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="users" class="w-4 h-4"></i> Clientes
+        </button>
+        <button onclick="nav('materias')" id="nav-materias" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="box" class="w-4 h-4"></i> Matérias-Primas
+        </button>
+        <button onclick="nav('produtos')" id="nav-produtos" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="package" class="w-4 h-4"></i> Produtos
+        </button>
+        <button onclick="nav('ordens')" id="nav-ordens" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i> Ordens de Produção
+        </button>
+        <button onclick="nav('mes')" id="nav-mes" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all text-amber-300 hover:bg-slate-800 hover:text-amber-200 border border-amber-500/20 bg-amber-500/5">
+          <span class="flex items-center gap-3">
+            <i data-lucide="cpu" class="w-4 h-4 text-amber-400"></i> MES (Sequenciamento)
+          </span>
+          <span class="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded">APS</span>
+        </button>
+        <button onclick="nav('vendas')" id="nav-vendas" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="shopping-bag" class="w-4 h-4"></i> Vendas
+        </button>
+        <button onclick="nav('estoque')" id="nav-estoque" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="archive" class="w-4 h-4"></i> Estoque (Kardex)
+        </button>
+        <button onclick="nav('sugestoes')" id="nav-sugestoes" class="nav-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <span class="flex items-center gap-3">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i> Sugestões de Compra
+          </span>
+          <span id="badge-sugestoes" class="hidden text-xs bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button onclick="nav('relatorios')" id="nav-relatorios" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all hover:bg-slate-800 text-slate-300 hover:text-white">
+          <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Relatórios
+        </button>
+      </nav>
+    </div>
+
+    <!-- RESET / FOOTER -->
+    <div class="p-3 border-t border-slate-800/80 bg-slate-950/40">
+      <button onclick="resetData()" class="w-full text-xs text-slate-400 hover:text-rose-400 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-850 rounded-lg transition border border-transparent hover:border-rose-500/20">
+        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Restaurar Dados Padrão
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEWPORT -->
+  <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 bg-slate-900">
+
+    <!-- GLOBAL INVENTORY WARNING BANNER -->
+    <div id="global-stock-alert" class="hidden mb-6 bg-amber-500/10 border border-amber-500/30 text-amber-300 px-5 py-3.5 rounded-2xl flex items-center gap-3 shadow-lg text-sm">
+      <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+      <span id="global-stock-alert-text"></span>
+    </div>
+
+    <!-- ================= 1. VIEW: DASHBOARD ================= -->
+    <div id="view-dashboard" class="space-y-6">
+      <div>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Dashboard Industrial</h2>
+        <p class="text-sm text-slate-400 mt-1">Indicadores consolidados de manufatura, suprimentos e finanças</p>
+      </div>
+
+      <!-- KPI METRIC CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Matérias-Primas</span>
+            <div id="kpi-mp-count" class="text-3xl font-bold text-white mt-1">0</div>
+          </div>
+          <div class="w-12 h-12 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center"><i data-lucide="box" class="w-6 h-6"></i></div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Produtos</span>
+            <div id="kpi-prod-count" class="text-3xl font-bold text-white mt-1">0</div>
+          </div>
+          <div class="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center"><i data-lucide="package" class="w-6 h-6"></i></div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ordens Ativas</span>
+            <div id="kpi-op-active" class="text-3xl font-bold text-amber-400 mt-1">0</div>
+          </div>
+          <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center"><i data-lucide="clipboard-list" class="w-6 h-6"></i></div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Alertas de Estoque</span>
+            <div id="kpi-alerts-count" class="text-3xl font-bold text-rose-400 mt-1">0</div>
+          </div>
+          <div class="w-12 h-12 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center"><i data-lucide="alert-octagon" class="w-6 h-6"></i></div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Valor do Estoque</span>
+            <div id="kpi-stock-val" class="text-2xl font-bold text-white mt-1">R$ 0,00</div>
+          </div>
+          <div class="w-12 h-12 bg-teal-500/10 border border-teal-500/20 text-teal-400 rounded-xl flex items-center justify-center"><i data-lucide="dollar-sign" class="w-6 h-6"></i></div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Vendas</span>
+            <div id="kpi-sales-val" class="text-2xl font-bold text-white mt-1">R$ 0,00</div>
+          </div>
+          <div class="w-12 h-12 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Clientes Cadastrados</span>
+            <div id="kpi-client-count" class="text-3xl font-bold text-white mt-1">0</div>
+          </div>
+          <div class="w-12 h-12 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-xl flex items-center justify-center"><i data-lucide="users" class="w-6 h-6"></i></div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fornecedores</span>
+            <div id="kpi-supplier-count" class="text-3xl font-bold text-white mt-1">0</div>
+          </div>
+          <div class="w-12 h-12 bg-slate-700/40 border border-slate-700 text-slate-300 rounded-xl flex items-center justify-center"><i data-lucide="truck" class="w-6 h-6"></i></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD SUMMARY CARDS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl shadow-sm">
+          <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="activity" class="w-5 h-5 text-blue-400"></i> Resumo de Produção
+          </h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between py-2 border-b border-slate-700/50">
+              <span class="text-slate-400">Total de Ordens Ativas:</span>
+              <span id="dash-active-ops" class="font-bold text-white">0</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-slate-700/50">
+              <span class="text-slate-400">Aguardando Início:</span>
+              <span id="dash-wait-ops" class="font-semibold text-amber-400">0</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-slate-700/50">
+              <span class="text-slate-400">Em Produção:</span>
+              <span id="dash-prog-ops" class="font-semibold text-blue-400">0</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-slate-400">Concluídas:</span>
+              <span id="dash-done-ops" class="font-semibold text-emerald-400">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl shadow-sm">
+          <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+            <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-400"></i> Status do Estoque
+          </h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between py-2 border-b border-slate-700/50">
+              <span class="text-slate-400">Itens Cadastrados:</span>
+              <span id="dash-stock-items" class="font-bold text-white">0</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-slate-700/50">
+              <span class="text-slate-400">Abaixo do Mínimo:</span>
+              <span id="dash-stock-below" class="font-semibold text-rose-400">0</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-slate-400">Situação Normal:</span>
+              <span id="dash-stock-normal" class="font-semibold text-emerald-400">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 2. VIEW: MES & SEQUENCIAMENTO ================= -->
+    <div id="view-mes" class="hidden space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Chão de Fábrica</span>
+            <h2 class="text-3xl font-extrabold text-white tracking-tight">MES & Sequenciamento</h2>
+          </div>
+          <p class="text-sm text-slate-400 mt-1">Programação e Otimização da Linha de Produção Compartilhada</p>
+        </div>
+        
+        <!-- HEURISTIC ACTION BUTTONS -->
+        <div class="flex flex-wrap items-center gap-2 bg-slate-950/60 p-2 rounded-2xl border border-slate-800">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wide mr-1">Heurísticas:</span>
+          <button onclick="applyHeuristic('FIFO')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium rounded-xl border border-slate-700 shadow-sm flex items-center gap-1.5 transition">
+            <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-400"></i> FIFO (Chegada)
+          </button>
+          <button onclick="applyHeuristic('SPT')" class="px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-xs font-medium rounded-xl border border-blue-500/30 shadow-sm flex items-center gap-1.5 transition" title="Shortest Processing Time">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i> SPT (Menor Tempo)
+          </button>
+          <button onclick="applyHeuristic('EDD')" class="px-3 py-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 text-xs font-medium rounded-xl border border-indigo-500/30 shadow-sm flex items-center gap-1.5 transition" title="Earliest Due Date">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-400"></i> EDD (Menor Prazo)
+          </button>
+          <button onclick="applyHeuristic('SETUP')" class="px-3 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 text-xs font-medium rounded-xl border border-emerald-500/30 shadow-sm flex items-center gap-1.5 transition" title="Agrupa produtos iguais para minimizar tempos de troca">
+            <i data-lucide="minimize-2" class="w-3.5 h-3.5 text-emerald-400"></i> Otimizar Setups
+          </button>
+        </div>
+      </div>
+
+      <!-- MES PROGRAMMING KPIS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Makespan (Tempo Total)</span>
+          <div id="mes-kpi-makespan" class="text-2xl font-extrabold text-white mt-1">0 min</div>
+          <span class="text-xs text-slate-500">Tempo para zerar a linha</span>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tempo Total Setup</span>
+          <div id="mes-kpi-setup" class="text-2xl font-extrabold text-amber-400 mt-1">0 min</div>
+          <span id="mes-kpi-setup-pct" class="text-xs text-slate-500">0% de parada na máquina</span>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tempo Médio de Fluxo</span>
+          <div id="mes-kpi-flow" class="text-2xl font-extrabold text-blue-400 mt-1">0 min</div>
+          <span class="text-xs text-slate-500">Média de permanência na fila</span>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Taxa de Atrasos</span>
+          <div id="mes-kpi-delay" class="text-2xl font-extrabold text-white mt-1">0 / 0</div>
+          <span id="mes-kpi-delay-badge" class="text-xs text-emerald-400 font-semibold">Sem atrasos previstos</span>
+        </div>
+      </div>
+
+      <!-- GANTT TIMELINE -->
+      <div class="bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="bar-chart" class="w-5 h-5 text-blue-400"></i> Diagrama de Gantt da Linha Única
+          </h3>
+          <div class="flex items-center gap-4 text-xs text-slate-400">
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-500 inline-block"></span> Setup / Troca</div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-600 inline-block"></span> Produção Normal</div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-600 inline-block"></span> Risco de Atraso</div>
+          </div>
+        </div>
+
+        <div id="mes-gantt-container" class="w-full bg-slate-950/80 rounded-xl p-3 border border-slate-700 flex items-center gap-1.5 overflow-x-auto custom-scrollbar min-h-[76px]">
+          <!-- Gantt blocks via JS -->
+        </div>
+      </div>
+
+      <!-- SEQUENCE TABLE -->
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="px-6 py-4 border-b border-slate-700/60 flex items-center justify-between bg-slate-950/40">
+          <div>
+            <h3 class="text-base font-bold text-white">Fila de Produção Sequenciada</h3>
+            <p class="text-xs text-slate-400">Ajuste manualmente com as setas para simular impactos em setup e prazos</p>
+          </div>
+          <span id="mes-queue-count" class="text-xs font-semibold text-slate-400">0 ordens</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-4 py-3 text-center">Fila</th>
+                <th class="px-4 py-3">Ordem (OP)</th>
+                <th class="px-4 py-3">Produto</th>
+                <th class="px-4 py-3 text-right">Qtd</th>
+                <th class="px-4 py-3 text-right">Proc.</th>
+                <th class="px-4 py-3 text-right">Setup</th>
+                <th class="px-4 py-3 text-right">Início (min)</th>
+                <th class="px-4 py-3 text-right">Término (min)</th>
+                <th class="px-4 py-3">Prazo Prometido</th>
+                <th class="px-4 py-3 text-center">Pontualidade</th>
+                <th class="px-4 py-3 text-center">Ações na Linha</th>
+              </tr>
+            </thead>
+            <tbody id="mes-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 3. VIEW: ORDENS DE PRODUÇÃO ================= -->
+    <div id="view-ordens" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight">Ordens de Produção (OP)</h2>
+          <p class="text-sm text-slate-400 mt-1">Gerencie a abertura, controle fabril e emissão de fichas de processo</p>
+        </div>
+        <button onclick="openModal('modal-op')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nova Ordem
+        </button>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-3.5">Código</th>
+                <th class="px-6 py-3.5">Produto</th>
+                <th class="px-6 py-3.5">Destino / Cliente</th>
+                <th class="px-6 py-3.5 text-right">Quantidade</th>
+                <th class="px-6 py-3.5">Prazo Prometido</th>
+                <th class="px-6 py-3.5 text-center">Status</th>
+                <th class="px-6 py-3.5 text-right">Ações PCP & Emissão</th>
+              </tr>
+            </thead>
+            <tbody id="op-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rows via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 4. VIEW: PRODUTOS ================= -->
+    <div id="view-produtos" class="hidden space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight">Produtos Acabados</h2>
+          <p class="text-sm text-slate-400 mt-1">Cadastro de produtos acabados, tempos de ciclo/setup e estrutura BOM</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="file" id="import-prod-file" accept=".csv" class="hidden" onchange="handleImportProd(event)">
+          <button onclick="downloadProdCsvTemplate()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg text-sm flex items-center gap-2 transition">
+            <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Baixar Modelo CSV
+          </button>
+          <button onclick="document.getElementById('import-prod-file').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 text-sm flex items-center gap-2 transition">
+            <i data-lucide="upload" class="w-4 h-4"></i> Importar CSV
+          </button>
+          <button onclick="openModalCreateProduct()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i> Novo Produto
+          </button>
+        </div>
+      </div>
+
+      <!-- DIDACTIC BOX: CUSTO FABRIL -->
+      <div class="bg-blue-900/20 border border-blue-500/30 p-5 rounded-2xl flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between shadow-lg">
+        <div class="flex-1">
+          <h4 class="text-blue-400 font-bold text-sm flex items-center gap-2 mb-1.5">
+            <i data-lucide="info" class="w-4 h-4"></i> Entendendo o Custo Fabril Integral (Custo Misto)
+          </h4>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Na indústria real, o custo de um produto não é apenas a soma das matérias-primas da BOM. É preciso adicionar o <strong>Custo de Transformação</strong>, que engloba a Mão de Obra Direta e os Gastos Gerais de Fabricação (energia, depreciação de máquinas, aluguel).<br>
+            A conta é simples: <code>(Tempo de Ciclo em minutos) &times; (Taxa Horária da Linha / 60)</code>. Altere o valor ao lado para simular o impacto na margem de lucro de todo o portfólio.
+          </p>
+        </div>
+        <div class="bg-slate-900 border border-slate-700 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-4 shrink-0 shadow-inner">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider sm:text-right">
+            Taxa Horária<br>do Centro de Custo
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500 font-bold">R$</span>
+            <input type="number" id="taxa-horaria-input" value="60" onchange="handleUpdateTaxa(this.value)" class="w-24 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white font-bold text-center focus:outline-blue-500 shadow-inner">
+            <span class="text-slate-500 font-bold">/ h</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-3.5">Nome</th>
+                <th class="px-6 py-3.5 text-right">Custo Total (BOM + Fabril)</th>
+                <th class="px-6 py-3.5 text-right">Preço de Venda</th>
+                <th class="px-6 py-3.5 text-right">Margem Bruta</th>
+                <th class="px-6 py-3.5 text-right">Estoque</th>
+                <th class="px-6 py-3.5 text-right">Tempo Ciclo</th>
+                <th class="px-6 py-3.5 text-right">Setup Linha</th>
+                <th class="px-6 py-3.5">Composição (BOM)</th>
+                <th class="px-6 py-3.5 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="prod-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 5. VIEW: MATÉRIAS-PRIMAS ================= -->
+    <div id="view-materias" class="hidden space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight">Matérias-Primas</h2>
+          <p class="text-sm text-slate-400 mt-1">Estoque de matérias-primas, custos unitários e parâmetros de reposição</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="file" id="import-mp-file" accept=".csv" class="hidden" onchange="handleImportMP(event)">
+          <button onclick="downloadMpCsvTemplate()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg text-sm flex items-center gap-2 transition">
+            <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Baixar Modelo CSV
+          </button>
+          <button onclick="document.getElementById('import-mp-file').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 text-sm flex items-center gap-2 transition">
+            <i data-lucide="upload" class="w-4 h-4"></i> Importar CSV
+          </button>
+          <button onclick="openModal('modal-mp')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nova Matéria-Prima
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-3.5">Nome</th>
+                <th class="px-6 py-3.5 text-right">Estoque</th>
+                <th class="px-6 py-3.5 text-right">Estoque Mínimo</th>
+                <th class="px-6 py-3.5">Unidade</th>
+                <th class="px-6 py-3.5 text-right">Custo Unitário</th>
+                <th class="px-6 py-3.5">Fornecedor Padrão</th>
+                <th class="px-6 py-3.5 text-center">Status</th>
+                <th class="px-6 py-3.5 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="mp-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 6. VIEW: ESTOQUE (KARDEX) ================= -->
+    <div id="view-estoque" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight">Estoque (Kardex)</h2>
+          <p class="text-sm text-slate-400 mt-1">Rastreabilidade completa de movimentações (Compras, Produção e Vendas)</p>
+        </div>
+        <button onclick="openModal('modal-compra')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Registrar Compra
+        </button>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm space-y-4">
+        <div class="flex items-center gap-4">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Filtrar por Item:</label>
+          <select id="kardex-filter" onchange="renderKardexTable()" class="border border-slate-700 rounded-xl px-3 py-1.5 text-sm bg-slate-900 text-slate-200 focus:outline-blue-500">
+            <option value="all">Todos os itens</option>
+          </select>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-4 py-3">Data/Hora</th>
+                <th class="px-4 py-3">Item</th>
+                <th class="px-4 py-3">Tipo</th>
+                <th class="px-4 py-3">Movimentação</th>
+                <th class="px-4 py-3 text-right">Quantidade</th>
+                <th class="px-4 py-3 text-center">Origem</th>
+                <th class="px-4 py-3">NF / Referência</th>
+              </tr>
+            </thead>
+            <tbody id="kardex-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 7. VIEW: SUGESTÕES DE COMPRA ================= -->
+    <div id="view-sugestoes" class="hidden space-y-6">
+      <div>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Sugestões de Compra</h2>
+        <p class="text-sm text-slate-400 mt-1">Reposição inteligente baseada em ponto de pedido e demanda das OPs</p>
+      </div>
+
+      <div id="sugestoes-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- ================= 8. VIEW: VENDAS ================= -->
+    <div id="view-vendas" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight">Vendas</h2>
+          <p class="text-sm text-slate-400 mt-1">Pedidos de clientes e faturamento direto com baixa de estoque</p>
+        </div>
+        <button onclick="openModal('modal-venda')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nova Venda
+        </button>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-3.5">Cliente</th>
+                <th class="px-6 py-3.5">Produto</th>
+                <th class="px-6 py-3.5 text-right">Quantidade</th>
+                <th class="px-6 py-3.5 text-right">Valor Total</th>
+                <th class="px-6 py-3.5 text-center">Status</th>
+                <th class="px-6 py-3.5">Data</th>
+              </tr>
+            </thead>
+            <tbody id="vendas-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 9. VIEW: CLIENTES ================= -->
+    <div id="view-clientes" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight">Clientes</h2>
+          <p class="text-sm text-slate-400 mt-1">Carteira de clientes e destinatários de ordens fabris</p>
+        </div>
+        <button onclick="openModal('modal-cliente')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+          <i data-lucide="plus" class="w-4 h-4"></i> Novo Cliente
+        </button>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-3.5">Nome</th>
+                <th class="px-6 py-3.5">E-mail</th>
+                <th class="px-6 py-3.5">Telefone</th>
+                <th class="px-6 py-3.5">Endereço</th>
+                <th class="px-6 py-3.5 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="clientes-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 10. VIEW: FORNECEDORES ================= -->
+    <div id="view-fornecedores" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-3xl font-extrabold text-white tracking-tight">Fornecedores</h2>
+          <p class="text-sm text-slate-400 mt-1">Parceiros de fornecimento de matérias-primas e insumos</p>
+        </div>
+        <button onclick="openModal('modal-fornecedor')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/20 text-sm flex items-center gap-2 transition">
+          <i data-lucide="plus" class="w-4 h-4"></i> Novo Fornecedor
+        </button>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950/60 text-slate-400 text-xs uppercase font-semibold border-b border-slate-700">
+              <tr>
+                <th class="px-6 py-3.5">Nome da Empresa</th>
+                <th class="px-6 py-3.5">Contato</th>
+                <th class="px-6 py-3.5 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="fornecedores-table-body" class="divide-y divide-slate-700/60">
+              <!-- Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 11. VIEW: RELATÓRIOS GERENCIAIS ================= -->
+    <div id="view-relatorios" class="hidden space-y-6">
+      <div>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Relatórios Gerenciais & BI</h2>
+        <p class="text-sm text-slate-400 mt-1">Eficiência produtiva e análise de volume de fabricação</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ordens Concluídas</span>
+          <div id="rep-total-ops" class="text-3xl font-bold text-white mt-1">0</div>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Produto Mais Produzido</span>
+          <div id="rep-top-prod" class="text-lg font-bold text-emerald-400 mt-1 truncate">-</div>
+        </div>
+        <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-sm">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Faturamento Concluído</span>
+          <div id="rep-total-rev" class="text-2xl font-bold text-blue-400 mt-1">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl shadow-sm">
+        <h3 class="text-base font-bold text-white mb-4">Volume de Fabricação Concluído por Produto</h3>
+        <div class="h-64">
+          <canvas id="chart-prod-volume"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- MODAL: NOVA OP (WITH REAL-TIME BOM EXPLOSION & INVENTORY FORECAST) -->
+  <div id="modal-op" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-850 bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl shadow-2xl p-6 relative max-h-[92vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="clipboard-list" class="w-5 h-5 text-blue-400"></i> Nova Ordem de Produção (OP)
+        </h3>
+        <button onclick="closeModal('modal-op')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <form id="form-op" onsubmit="handleCreateOP(event)" class="mt-4 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Produto a Fabricar *</label>
+            <select id="op-product-select" onchange="updateOpBomForecast()" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Destino / Cliente *</label>
+            <select id="op-client-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500">
+              <option value="Estoque">Produção para Estoque</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Quantidade *</label>
+            <input type="number" id="op-qty" min="1" value="10" oninput="updateOpBomForecast()" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500" placeholder="Ex: 50">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Prazo Prometido (Due Date) *</label>
+            <input type="date" id="op-due-date" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500">
+          </div>
+        </div>
+
+        <!-- LIVE BOM DEMAND VS CURRENT STOCK SECTION -->
+        <div class="pt-3 border-t border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+              <i data-lucide="layers" class="w-4 h-4"></i> Previsão de Consumo de Materiais (BOM) x Estoque
+            </label>
+            <span id="op-forecast-summary" class="text-xs font-semibold text-emerald-400">Verificado</span>
+          </div>
+
+          <div class="bg-slate-950/70 border border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-900 text-slate-400 uppercase font-semibold border-b border-slate-800">
+                <tr>
+                  <th class="px-3 py-2">Matéria-Prima</th>
+                  <th class="px-3 py-2 text-right">Por Unidade</th>
+                  <th class="px-3 py-2 text-right">Consumo Total</th>
+                  <th class="px-3 py-2 text-right">Estoque Atual</th>
+                  <th class="px-3 py-2 text-right">Saldo Projetado</th>
+                  <th class="px-3 py-2 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="op-bom-forecast-tbody" class="divide-y divide-slate-800">
+                <!-- Calculated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeModal('modal-op')" class="px-4 py-2 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl hover:bg-slate-800">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30">Criar Ordem</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA / TRAVELER DE PRODUÇÃO (PRINT/EXPORT OP) -->
+  <div id="modal-op-sheet" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white text-slate-900 rounded-3xl w-full max-w-3xl shadow-2xl p-8 relative max-h-[92vh] overflow-y-auto custom-scrollbar">
+      
+      <!-- Action Bar -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200 no-print">
+        <span class="text-xs uppercase font-bold text-blue-600 tracking-wider">Ficha Técnica da Ordem Fabril</span>
+        <div class="flex items-center gap-2">
+          <button id="btn-download-pdf" onclick="downloadOpPdf()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Baixar PDF
+          </button>
+          <button onclick="printOpSheet()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow transition">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimir
+          </button>
+          <button onclick="closeModal('modal-op-sheet')" class="text-slate-400 hover:text-slate-700 p-1">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- PRINTABLE DOCUMENT -->
+      <div id="printable-op-sheet" class="pt-4 text-slate-900">
+        <!-- Sheet Header -->
+        <div class="flex justify-between items-start pb-4 border-b-2 border-slate-900">
+          <div>
+            <h2 class="text-2xl font-black tracking-tight text-slate-900">ORDEM DE PRODUÇÃO</h2>
+            <p class="text-xs text-slate-600 uppercase font-semibold">ERP Simulator - Sistema de Gestão Industrial</p>
+          </div>
+          <div class="text-right">
+            <span id="sheet-op-code" class="text-xl font-mono font-black text-blue-700 block">OP #000</span>
+            <span id="sheet-op-date" class="text-xs text-slate-500">Emitido em: 00/00/0000</span>
+          </div>
+        </div>
+
+        <!-- OP Info Box -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 border-b border-slate-200 text-xs">
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Produto Acabado:</span>
+            <span id="sheet-prod-name" class="font-bold text-slate-900 text-sm">Produto X</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Quantidade a Fabricar:</span>
+            <span id="sheet-prod-qty" class="font-bold text-slate-900 text-sm">0 un</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Destino / Cliente:</span>
+            <span id="sheet-op-client" class="font-bold text-slate-900 text-sm">Estoque</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Prazo de Entrega:</span>
+            <span id="sheet-op-due" class="font-bold text-rose-600 text-sm">00/00/0000</span>
+          </div>
+        </div>
+
+        <!-- BOM Requisições de Almoxarifado -->
+        <div class="py-4">
+          <h4 class="text-xs uppercase font-bold text-slate-700 mb-2">Requisição de Matérias-Primas (BOM):</h4>
+          <table class="w-full text-left text-xs border border-slate-300">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
+              <tr>
+                <th class="p-2 border-r border-slate-300">Código / Insumo</th>
+                <th class="p-2 text-right border-r border-slate-300">Coef. Unitário</th>
+                <th class="p-2 text-right border-r border-slate-300">Quantidade Requisitada</th>
+                <th class="p-2 text-center border-r border-slate-300">Unidade</th>
+                <th class="p-2 text-center">Conferência Almox.</th>
+              </tr>
+            </thead>
+            <tbody id="sheet-bom-tbody" class="divide-y divide-slate-300">
+              <!-- Materials listed via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Process Tracking & Signatures -->
+        <div class="pt-6 border-t-2 border-slate-300 space-y-6">
+          <div class="grid grid-cols-2 gap-6 text-xs">
+            <div class="p-3 border border-slate-300 rounded-lg">
+              <span class="block font-bold text-slate-800 mb-1">Apontamento de Execução:</span>
+              <p>Início Real: ____/____/________ às ____:____</p>
+              <p class="mt-2">Término Real: ____/____/________ às ____:____</p>
+              <p class="mt-2">Qtd Efetivamente Produzida: ____________</p>
+            </div>
+            <div class="p-3 border border-slate-300 rounded-lg">
+              <span class="block font-bold text-slate-800 mb-1">Inspeção de Qualidade (CQ):</span>
+              <p>Status: [  ] Aprovado   [  ] Reprovado   [  ] Retrabalho</p>
+              <p class="mt-2">Refugo / Perdas: ____________________</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-12 pt-8 text-center text-xs">
+            <div class="border-t border-slate-400 pt-1.5 font-semibold text-slate-700">
+              Operador Responsável (Linha de Produção)
+            </div>
+            <div class="border-t border-slate-400 pt-1.5 font-semibold text-slate-700">
+              Inspetor de Qualidade / Supervisor PCP
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO PRODUTO -->
+  <div id="modal-prod" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-xl shadow-2xl p-6 relative max-h-[92vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 id="modal-prod-title" class="text-lg font-bold text-white">Novo Produto Acabado</h3>
+        <button onclick="closeModal('modal-prod')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="form-prod" onsubmit="handleSaveProduct(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="prod-edit-id" value="">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nome do Produto *</label>
+          <input type="text" id="prod-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500" placeholder="Ex: Chapa Metálica Furada">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Preço de Venda (R$) *</label>
+            <input type="number" step="0.01" id="prod-price" oninput="renderCurrentBom()" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Estoque Inicial / Atual</label>
+            <input type="number" id="prod-initial-stock" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Tempo de Ciclo (min/un) *</label>
+            <input type="number" step="0.1" id="prod-cycle-time" oninput="renderCurrentBom()" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-blue-500" placeholder="15">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-amber-400 uppercase mb-1">Setup da Linha (min) *</label>
+            <input type="number" id="prod-setup-time" required value="30" class="w-full bg-slate-950 border border-amber-500/40 rounded-xl p-2.5 text-sm text-white focus:outline-amber-500" placeholder="30">
+          </div>
+        </div>
+
+        <!-- BOM SECTION -->
+        <div class="pt-2 border-t border-slate-800">
+          <label class="block text-xs font-bold text-blue-400 uppercase mb-2">Estrutura de Materiais (BOM por Unidade):</label>
+          <div class="flex gap-2 mb-3">
+            <select id="bom-mp-select" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2 text-sm text-white"></select>
+            <input type="number" step="0.01" id="bom-qty-input" class="w-24 bg-slate-950 border border-slate-700 rounded-xl p-2 text-sm text-white" placeholder="Qtd">
+            <button type="button" onclick="addBomItem()" class="px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div id="bom-items-list" class="space-y-1.5 max-h-32 overflow-y-auto text-xs bg-slate-950/70 p-2.5 rounded-xl border border-slate-800">
+            <span class="text-slate-500 italic">Nenhum componente adicionado.</span>
+          </div>
+
+          <!-- DYNAMIC COST & MARGIN BOX -->
+          <div class="mt-3 p-3 bg-slate-950/80 border border-slate-800 rounded-xl grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span class="text-slate-400 block uppercase font-medium">Custo Total (BOM + Tempo):</span>
+              <span id="modal-prod-calc-cost" class="text-base font-bold text-amber-400">R$ 0,00</span>
+              <span id="modal-prod-calc-cost-split" class="text-[10px] text-slate-500 block mt-0.5">MP: R$ 0,00 | Fabril: R$ 0,00</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block uppercase font-medium">Margem Prevista:</span>
+              <span id="modal-prod-calc-margin" class="text-base font-bold text-emerald-400">R$ 0,00 (0.0%)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('modal-prod')" class="px-4 py-2 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl hover:bg-slate-800">Cancelar</button>
+          <button type="submit" id="modal-prod-submit-btn" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30">Salvar Produto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA TÉCNICA DO PRODUTO (PRINT / EXPORT PRODUCT SHEET) -->
+  <div id="modal-prod-sheet" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white text-slate-900 rounded-3xl w-full max-w-3xl shadow-2xl p-8 relative max-h-[92vh] overflow-y-auto custom-scrollbar">
+      
+      <!-- Action Bar -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200 no-print">
+        <span class="text-xs uppercase font-bold text-emerald-700 tracking-wider flex items-center gap-1.5">
+          <i data-lucide="file-text" class="w-4 h-4"></i> Especificação Técnica de Produto
+        </span>
+        <div class="flex items-center gap-2">
+          <button id="btn-download-prod-pdf" onclick="downloadProductPdf()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Baixar PDF
+          </button>
+          <button onclick="printProductSheet()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 shadow transition">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimir
+          </button>
+          <button onclick="closeModal('modal-prod-sheet')" class="text-slate-400 hover:text-slate-700 p-1">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- PRINTABLE PRODUCT DOCUMENT -->
+      <div id="printable-prod-sheet" class="pt-4 text-slate-900">
+        <!-- Sheet Header -->
+        <div class="flex justify-between items-start pb-4 border-b-2 border-slate-900">
+          <div>
+            <h2 class="text-2xl font-black tracking-tight text-slate-900">FICHA TÉCNICA DE PRODUTO</h2>
+            <p class="text-xs text-slate-600 uppercase font-semibold">ERP Simulator - Engenharia de Produto & Manufatura</p>
+          </div>
+          <div class="text-right">
+            <span id="sheet-prod-code" class="text-xl font-mono font-black text-emerald-700 block">PROD #000</span>
+            <span id="sheet-prod-date" class="text-xs text-slate-500">Revisão: 00/00/0000</span>
+          </div>
+        </div>
+
+        <!-- Product General Specs Box -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 border-b border-slate-200 text-xs">
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Descrição do Item:</span>
+            <span id="sheet-p-name" class="font-bold text-slate-900 text-sm">Produto X</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Preço de Venda:</span>
+            <span id="sheet-p-price" class="font-bold text-emerald-700 text-sm">R$ 0,00</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Custo de Fab. (Total):</span>
+            <span id="sheet-p-cost" class="font-bold text-amber-700 text-sm">R$ 0,00</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Margem Bruta Unitária:</span>
+            <span id="sheet-p-margin" class="font-bold text-blue-700 text-sm">R$ 0,00 (0.0%)</span>
+          </div>
+        </div>
+
+        <!-- Technical Cadence & Line Parameters -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 py-3 border-b border-slate-200 bg-slate-50 p-3 rounded-lg text-xs mt-3">
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Tempo de Ciclo Unitário:</span>
+            <span id="sheet-p-cycle" class="font-bold text-slate-800 text-sm">0 min</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Cadência Teórica Horária:</span>
+            <span id="sheet-p-rate" class="font-bold text-slate-800 text-sm">0 un/hora</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block uppercase font-semibold">Tempo Padrão de Setup (Linha):</span>
+            <span id="sheet-p-setup" class="font-bold text-amber-700 text-sm">0 min</span>
+          </div>
+        </div>
+
+        <!-- BOM Table -->
+        <div class="py-4">
+          <h4 class="text-xs uppercase font-bold text-slate-700 mb-2 flex items-center justify-between">
+            <span>Estrutura de Materiais do Produto (BOM):</span>
+            <span class="text-slate-500 font-normal">Base de cálculo: 1 unidade</span>
+          </h4>
+          <table class="w-full text-left text-xs border border-slate-300">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
+              <tr>
+                <th class="p-2 border-r border-slate-300">Insumo / Matéria-Prima</th>
+                <th class="p-2 text-right border-r border-slate-300">Quantidade</th>
+                <th class="p-2 text-center border-r border-slate-300">Unidade</th>
+                <th class="p-2 text-right border-r border-slate-300">Custo Unitário (MP)</th>
+                <th class="p-2 text-right">Custo na Composição</th>
+              </tr>
+            </thead>
+            <tbody id="sheet-prod-bom-tbody" class="divide-y divide-slate-300">
+              <!-- BOM components via JS -->
+            </tbody>
+            <tfoot class="bg-slate-50 border-t-2 border-slate-300 font-bold text-slate-700">
+              <tr>
+                <td colspan="4" class="p-2 text-right border-r border-slate-300">Custo de Matéria-Prima por Unidade (BOM):</td>
+                <td id="sheet-prod-bom-total" class="p-2 text-right">R$ 0,00</td>
+              </tr>
+              <tr>
+                <td colspan="4" class="p-2 text-right border-r border-slate-300">Custo de Transformação (Tempo &times; Taxa Horária):</td>
+                <td id="sheet-prod-fabril-total" class="p-2 text-right">R$ 0,00</td>
+              </tr>
+              <tr class="text-amber-800 text-sm border-t border-slate-300">
+                <td colspan="4" class="p-2 text-right border-r border-slate-300 uppercase">Custo Total Unitário:</td>
+                <td id="sheet-prod-final-total" class="p-2 text-right font-black">R$ 0,00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Engineering Approval Signatures -->
+        <div class="pt-6 border-t-2 border-slate-300 space-y-4">
+          <div class="text-xs text-slate-500">
+            Documento de Engenharia de Processo e Manufatura emitido pelo sistema ERP/MES Simulator. Todos os parâmetros de tempo e consumo foram aferidos para a linha única compartilhada.
+          </div>
+          <div class="grid grid-cols-2 gap-12 pt-6 text-center text-xs">
+            <div class="border-t border-slate-400 pt-1.5 font-semibold text-slate-700">
+              Engenharia de Produto / Custos
+            </div>
+            <div class="border-t border-slate-400 pt-1.5 font-semibold text-slate-700">
+              Planejamento e Controle da Produção (PCP)
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVA MATÉRIA-PRIMA -->
+  <div id="modal-mp" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg shadow-2xl p-6 relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white">Nova Matéria-Prima</h3>
+        <button onclick="closeModal('modal-mp')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="form-mp" onsubmit="handleCreateMP(event)" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nome do Insumo *</label>
+          <input type="text" id="mp-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white" placeholder="Ex: Chapa de Aço 1020">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Unidade *</label>
+            <input type="text" id="mp-unit" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white" placeholder="kg, metros, un...">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Estoque Inicial</label>
+            <input type="number" id="mp-initial-stock" value="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Estoque Mínimo *</label>
+            <input type="number" id="mp-min-stock" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Custo Unitário (R$) *</label>
+            <input type="number" step="0.01" id="mp-cost" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Lote Mínimo *</label>
+            <input type="number" id="mp-lot" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Demanda Anual *</label>
+            <input type="number" id="mp-demanda" required value="10000" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Lead Time (dias) *</label>
+            <input type="number" id="mp-leadtime" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Fornecedor Padrão</label>
+            <select id="mp-supplier-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white"></select>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('modal-mp')" class="px-4 py-2 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl hover:bg-slate-800">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30">Salvar Matéria-Prima</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR COMPRA -->
+  <div id="modal-compra" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white">Registrar Compra de Insumo</h3>
+        <button onclick="closeModal('modal-compra')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="form-compra" onsubmit="handleRegisterPurchase(event)" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Matéria-Prima *</label>
+          <select id="compra-mp-select" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Quantidade *</label>
+          <input type="number" id="compra-qty" min="1" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nota Fiscal *</label>
+          <input type="text" id="compra-nf" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white" placeholder="Ex: 58492">
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('modal-compra')" class="px-4 py-2 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl hover:bg-slate-800">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30">Registrar Entrada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVA VENDA -->
+  <div id="modal-venda" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white">Novo Pedido de Venda</h3>
+        <button onclick="closeModal('modal-venda')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="form-venda" onsubmit="handleCreateSale(event)" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Cliente *</label>
+          <select id="venda-cliente-select" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Produto *</label>
+          <select id="venda-prod-select" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Quantidade *</label>
+          <input type="number" id="venda-qty" min="1" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('modal-venda')" class="px-4 py-2 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl hover:bg-slate-800">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30">Confirmar Venda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO CLIENTE -->
+  <div id="modal-cliente" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white">Novo Cliente</h3>
+        <button onclick="closeModal('modal-cliente')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="form-cliente" onsubmit="handleCreateClient(event)" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nome Completo *</label>
+          <input type="text" id="cli-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">E-mail *</label>
+          <input type="email" id="cli-email" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Telefone *</label>
+          <input type="text" id="cli-phone" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Endereço</label>
+          <input type="text" id="cli-address" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('modal-cliente')" class="px-4 py-2 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl hover:bg-slate-800">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30">Cadastrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO FORNECEDOR -->
+  <div id="modal-fornecedor" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md shadow-2xl p-6 relative">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-lg font-bold text-white">Novo Fornecedor</h3>
+        <button onclick="closeModal('modal-fornecedor')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="form-fornecedor" onsubmit="handleCreateSupplier(event)" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Nome da Empresa *</label>
+          <input type="text" id="forn-name" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Contato (Email ou Telefone) *</label>
+          <input type="text" id="forn-contact" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white">
+        </div>
+        <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeModal('modal-fornecedor')" class="px-4 py-2 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl hover:bg-slate-800">Cancelar</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/30">Cadastrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT ENGINE ==================== -->
+  <script>
+    // SEED INITIAL DATABASE
+    const INITIAL_DATA = {
+      clientes: [
+        { id: 1, nome: "Lojão dos Sofás", email: "lojaosofa@hotmail.com", telefone: "(49) 99999-7777", endereco: "Distrito Industrial" },
+        { id: 2, nome: "Metalúrgica Progresso", email: "contato@progresso.ind.br", telefone: "(49) 98888-2233", endereco: "Chapecó - SC" },
+        { id: 3, nome: "Distribuidora Central", email: "vendas@centraldist.com", telefone: "(49) 97777-1122", endereco: "Centro" }
+      ],
+      fornecedores: [
+        { id: 1, nome: "Aço Inox Sul", contato: "(49) 99988-7755" },
+        { id: 2, nome: "Espumas & Fibras Brasil", contato: "suprimentos@espumasbrasil.com.br" },
+        { id: 3, nome: "Têxtil Persa Indústria", contato: "(11) 4555-8899" }
+      ],
+      materias: [
+        { id: 1, nome: "Espuma D33", estoque: 980, estoqueMinimo: 2000, unidade: "Kg", custo: 18.50, loteMinimo: 2500, leadTime: 3, fornecedor: "Espumas & Fibras Brasil", demandaAnual: 35000 },
+        { id: 2, nome: "Tecido Linho Bege", estoque: 90, estoqueMinimo: 2000, unidade: "metros", custo: 24.00, loteMinimo: 1800, leadTime: 3, fornecedor: "Têxtil Persa Indústria", demandaAnual: 24000 },
+        { id: 3, nome: "Chapa Aço 1020 2mm", estoque: 1500, estoqueMinimo: 1000, unidade: "und", custo: 42.00, loteMinimo: 1000, leadTime: 5, fornecedor: "Aço Inox Sul", demandaAnual: 15000 },
+        { id: 4, nome: "Parafuso Sextavado M8", estoque: 14900, estoqueMinimo: 5000, unidade: "und", custo: 0.35, loteMinimo: 5000, leadTime: 2, fornecedor: "Aço Inox Sul", demandaAnual: 120000 }
+      ],
+      produtos: [
+        { id: 1, nome: "Suporte Alumínio Reforçado", preco: 250.00, estoque: 25, tempoCicloMin: 12, tempoSetupMin: 20, bom: [{ mpId: 3, qtd: 1 }, { mpId: 4, qtd: 8 }] },
+        { id: 2, nome: "Poltrona Reclinável Confort", preco: 850.00, estoque: 10, tempoCicloMin: 35, tempoSetupMin: 45, bom: [{ mpId: 1, qtd: 12 }, { mpId: 2, qtd: 8 }] },
+        { id: 3, nome: "Chapa Estampada Industrial", preco: 110.00, estoque: 80, tempoCicloMin: 8, tempoSetupMin: 15, bom: [{ mpId: 3, qtd: 1 }] }
+      ],
+      ordens: [
+        { id: 101, produtoId: 1, cliente: "Estoque", quantidade: 30, status: "Aguardando Início", prazo: "2026-11-12", dataCriacao: "2026-11-01" },
+        { id: 102, produtoId: 2, cliente: "Lojão dos Sofás", quantidade: 15, status: "Em Produção", prazo: "2026-11-10", dataCriacao: "2026-11-02" },
+        { id: 103, produtoId: 1, cliente: "Metalúrgica Progresso", quantidade: 20, status: "Aguardando Início", prazo: "2026-11-18", dataCriacao: "2026-11-03" },
+        { id: 104, produtoId: 3, cliente: "Estoque", quantidade: 50, status: "Aguardando Início", prazo: "2026-11-09", dataCriacao: "2026-11-04" }
+      ],
+      vendas: [
+        { id: 1, cliente: "Lojão dos Sofás", produtoId: 2, quantidade: 5, valorTotal: 4250.00, status: "Concluído", data: "2026-11-01" },
+        { id: 2, cliente: "Metalúrgica Progresso", produtoId: 1, quantidade: 10, valorTotal: 2500.00, status: "Concluído", data: "2026-11-03" }
+      ],
+      kardex: [
+        { id: 1, data: "2026-11-01 10:30", item: "Chapa Aço 1020 2mm", tipo: "Matéria-Prima", mov: "Entrada", qtd: 1500, origem: "Compra", nf: "NF-84920" },
+        { id: 2, data: "2026-11-02 14:15", item: "Suporte Alumínio Reforçado", tipo: "Produto", mov: "Entrada", qtd: 25, origem: "Produção", nf: "OP-98" },
+        { id: 3, data: "2026-11-03 09:00", item: "Poltrona Reclinável Confort", tipo: "Produto", mov: "Saída", qtd: 5, origem: "Venda", nf: "PED-01" }
+      ],
+      mesSequenceIds: [102, 104, 101, 103],
+      taxaHoraria: 60
+    };
+
+    let DB = JSON.parse(localStorage.getItem('ERP_MES_STORAGE')) || INITIAL_DATA;
+
+    function saveDB() {
+      localStorage.setItem('ERP_MES_STORAGE', JSON.stringify(DB));
+    }
+
+    function resetData() {
+      if (confirm("Deseja restaurar todos os dados para o padrão de fábrica?")) {
+        localStorage.removeItem('ERP_MES_STORAGE');
+        DB = JSON.parse(JSON.stringify(INITIAL_DATA));
+        saveDB();
+        renderAll();
+      }
+    }
+
+    // NAVIGATION
+    function nav(viewId) {
+      document.querySelectorAll('main > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-600/30');
+        if (!el.id.includes('mes')) {
+          el.classList.add('text-slate-300');
+        }
+      });
+
+      const target = document.getElementById('view-' + viewId);
+      const targetNav = document.getElementById('nav-' + viewId);
+      if (target) target.classList.remove('hidden');
+      if (targetNav) {
+        targetNav.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-600/30');
+        targetNav.classList.remove('text-slate-300');
+      }
+
+      if (viewId === 'mes') renderMES();
+      if (viewId === 'relatorios') renderRelatorios();
+      if (viewId === 'sugestoes') renderSugestoes();
+      lucide.createIcons();
+    }
+
+    // MODAL CONTROL
+    function openModal(id) {
+      populateDropdowns();
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.remove('hidden');
+      if (id === 'modal-op') {
+        const today = new Date();
+        today.setDate(today.getDate() + 7);
+        document.getElementById('op-due-date').value = today.toISOString().split('T')[0];
+        updateOpBomForecast();
+      }
+      lucide.createIcons();
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.add('hidden');
+    }
+
+    // POPULATE SELECTS
+    function populateDropdowns() {
+      const opProd = document.getElementById('op-product-select');
+      opProd.innerHTML = DB.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+
+      const opCli = document.getElementById('op-client-select');
+      opCli.innerHTML = '<option value="Estoque">Produção para Estoque</option>' + 
+        DB.clientes.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+
+      const mpSup = document.getElementById('mp-supplier-select');
+      mpSup.innerHTML = DB.fornecedores.map(f => `<option value="${f.nome}">${f.nome}</option>`).join('');
+
+      const cmpMp = document.getElementById('compra-mp-select');
+      cmpMp.innerHTML = DB.materias.map(m => `<option value="${m.id}">${m.nome} (${m.unidade})</option>`).join('');
+
+      const vCli = document.getElementById('venda-cliente-select');
+      vCli.innerHTML = DB.clientes.map(c => `<option value="${c.nome}">${c.nome}</option>`).join('');
+
+      const vProd = document.getElementById('venda-prod-select');
+      vProd.innerHTML = DB.produtos.map(p => `<option value="${p.id}">${p.nome} - R$ ${p.preco.toFixed(2)} (Estoque: ${p.estoque} un)</option>`).join('');
+
+      const bomMp = document.getElementById('bom-mp-select');
+      bomMp.innerHTML = DB.materias.map(m => `<option value="${m.id}">${m.nome} (${m.unidade})</option>`).join('');
+
+      const kFilter = document.getElementById('kardex-filter');
+      const allItems = [...new Set([...DB.materias.map(m => m.nome), ...DB.produtos.map(p => p.nome)])];
+      kFilter.innerHTML = '<option value="all">Todos os itens</option>' + allItems.map(i => `<option value="${i}">${i}</option>`).join('');
+    }
+
+    function handleUpdateTaxa(val) {
+      const taxa = parseFloat(val);
+      if (!isNaN(taxa) && taxa >= 0) {
+        DB.taxaHoraria = taxa;
+        saveDB();
+        renderProdutosTable();
+      }
+    }
+
+    // ==================== NEW FEATURE 1: LIVE BOM EXPLOSION IN OP MODAL ====================
+    function updateOpBomForecast() {
+      const prodId = parseInt(document.getElementById('op-product-select').value);
+      const qty = parseFloat(document.getElementById('op-qty').value) || 0;
+      const tbody = document.getElementById('op-bom-forecast-tbody');
+      const summary = document.getElementById('op-forecast-summary');
+
+      const prod = DB.produtos.find(p => p.id === prodId);
+      if (!prod || !prod.bom || prod.bom.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-slate-500 italic">Este produto não possui estrutura BOM cadastrada.</td></tr>';
+        summary.className = 'text-xs font-semibold text-amber-400';
+        summary.innerText = 'Sem BOM cadastrada';
+        return;
+      }
+
+      let allSufficient = true;
+      let rowsHtml = '';
+
+      prod.bom.forEach(item => {
+        const mp = DB.materias.find(m => m.id === item.mpId);
+        if (!mp) return;
+
+        const neededTotal = item.qtd * qty;
+        const currentStock = mp.estoque;
+        const projectedStock = currentStock - neededTotal;
+        const isLow = projectedStock < 0;
+
+        if (isLow) allSufficient = false;
+
+        rowsHtml += `
+          <tr class="${isLow ? 'bg-rose-950/20' : 'hover:bg-slate-900/60'}">
+            <td class="px-3 py-2 font-medium text-white">${mp.nome}</td>
+            <td class="px-3 py-2 text-right text-slate-400">${item.qtd} ${mp.unidade}</td>
+            <td class="px-3 py-2 text-right font-bold text-amber-400">${neededTotal.toFixed(2)} ${mp.unidade}</td>
+            <td class="px-3 py-2 text-right font-semibold text-slate-200">${currentStock.toFixed(2)} ${mp.unidade}</td>
+            <td class="px-3 py-2 text-right font-bold ${isLow ? 'text-rose-400' : 'text-emerald-400'}">
+              ${projectedStock.toFixed(2)} ${mp.unidade}
+            </td>
+            <td class="px-3 py-2 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isLow ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'}">
+                ${isLow ? 'Insuficiente' : 'Disponível'}
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = rowsHtml;
+      if (allSufficient) {
+        summary.className = 'text-xs font-semibold text-emerald-400 flex items-center gap-1';
+        summary.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Estoque Suficiente';
+      } else {
+        summary.className = 'text-xs font-semibold text-rose-400 flex items-center gap-1';
+        summary.innerHTML = '<i data-lucide="alert-octagon" class="w-3.5 h-3.5"></i> Faltam Materiais na BOM';
+      }
+      lucide.createIcons();
+    }
+
+    // ==================== NEW FEATURE 2: PRINT / EXPORT OP TRAVELER SHEET ====================
+    let currentOpSheetData = null;
+
+    function openOpSheet(opId) {
+      const op = DB.ordens.find(o => o.id === opId);
+      if (!op) return;
+      currentOpSheetData = op;
+      const prod = DB.produtos.find(p => p.id === op.produtoId);
+
+      document.getElementById('sheet-op-code').innerText = `OP #${op.id}`;
+      document.getElementById('sheet-op-date').innerText = `Emitido em: ${op.dataCriacao || new Date().toISOString().split('T')[0]}`;
+      document.getElementById('sheet-prod-name').innerText = prod ? prod.nome : 'Produto Desconhecido';
+      document.getElementById('sheet-prod-qty').innerText = `${op.quantidade} un`;
+      document.getElementById('sheet-op-client').innerText = op.cliente || 'Estoque';
+      document.getElementById('sheet-op-due').innerText = op.prazo || 'Não informado';
+
+      const tbody = document.getElementById('sheet-bom-tbody');
+      if (!prod || !prod.bom || prod.bom.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500 italic">Nenhum material listado na ficha técnica (BOM).</td></tr>';
+      } else {
+        tbody.innerHTML = prod.bom.map(b => {
+          const mp = DB.materias.find(m => m.id === b.mpId);
+          const totalReq = (b.qtd * op.quantidade).toFixed(2);
+          return `
+            <tr class="text-slate-800">
+              <td class="p-2 border-r border-slate-300 font-semibold">${mp ? mp.nome : 'Item Insumo'}</td>
+              <td class="p-2 border-r border-slate-300 text-right">${b.qtd}</td>
+              <td class="p-2 border-r border-slate-300 text-right font-bold">${totalReq}</td>
+              <td class="p-2 border-r border-slate-300 text-center">${mp ? mp.unidade : 'un'}</td>
+              <td class="p-2 text-center text-slate-400">[  ] Entregue</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      openModal('modal-op-sheet');
+    }
+
+    function downloadOpPdf() {
+      const element = document.getElementById('printable-op-sheet');
+      const opId = currentOpSheetData ? currentOpSheetData.id : '000';
+      const btn = document.getElementById('btn-download-pdf');
+      const originalText = btn.innerHTML;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-block animate-spin mr-1">⌛</span> Gerando...';
+
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: 10,
+          filename: `Ficha_OP_${opId}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          lucide.createIcons();
+        }).catch(err => {
+          console.error("Erro ao gerar PDF via html2pdf:", err);
+          fallbackDownloadDoc(opId);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          lucide.createIcons();
+        });
+      } else {
+        fallbackDownloadDoc(opId);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
+
+    function fallbackDownloadDoc(opId) {
+      const content = document.getElementById('printable-op-sheet').innerHTML;
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Ficha OP #${opId}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
+            th { background: #f0f0f0; }
+            .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+          </style>
+        </head>
+        <body>${content}</body>
+        </html>
+      `;
+      const blob = new Blob([fullHtml], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Ficha_OP_${opId}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function printOpSheet() {
+      const sheet = document.getElementById('printable-op-sheet');
+      const opId = currentOpSheetData ? currentOpSheetData.id : '';
+      
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Imprimir OP #${opId}</title>
+            <script src="https://cdn.tailwindcss.com"><\/script>
+            <style>
+              @media print {
+                body { padding: 0; margin: 0; }
+              }
+              body { font-family: system-ui, -apple-system, sans-serif; background: #fff; color: #0f172a; padding: 24px; }
+            </style>
+          </head>
+          <body>
+            ${sheet.innerHTML}
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                }, 300);
+              };
+            <\/script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } else {
+        window.print();
+      }
+    }
+
+    // PRODUCT BOM BUILDER HELPER
+    let currentBomList = [];
+    function addBomItem() {
+      const mpId = parseInt(document.getElementById('bom-mp-select').value);
+      const qty = parseFloat(document.getElementById('bom-qty-input').value);
+      if (!mpId || !qty || qty <= 0) return alert("Selecione um componente e a quantidade.");
+      const mp = DB.materias.find(m => m.id === mpId);
+      currentBomList.push({ mpId, qtd: qty, nome: mp.nome, unidade: mp.unidade, custo: getMpCost(mp) });
+      document.getElementById('bom-qty-input').value = '';
+      renderCurrentBom();
+    }
+    function removeBomItem(idx) {
+      currentBomList.splice(idx, 1);
+      renderCurrentBom();
+    }
+    function renderCurrentBom() {
+      const container = document.getElementById('bom-items-list');
+      let totalBomCost = 0;
+
+      if (currentBomList.length === 0) {
+        container.innerHTML = '<span class="text-slate-500 italic">Nenhum componente adicionado.</span>';
+      } else {
+        container.innerHTML = currentBomList.map((item, idx) => {
+          const mp = DB.materias.find(m => m.id === item.mpId);
+          const unitCost = getMpCost(mp);
+          const subtotal = unitCost * item.qtd;
+          totalBomCost += subtotal;
+          return `
+            <div class="flex items-center justify-between bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+              <div>
+                <span class="font-medium text-slate-200">${item.nome} &mdash; <strong class="text-amber-400">${item.qtd} ${item.unidade}</strong></span>
+                <span class="text-[10px] text-slate-400 ml-2">(R$ ${unitCost.toFixed(2)}/un &rarr; R$ ${subtotal.toFixed(2)})</span>
+              </div>
+              <button type="button" onclick="removeBomItem(${idx})" class="text-rose-400 hover:text-rose-300 font-bold ml-2">&times;</button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Update Cost & Margin Summary Box in Modal
+      const costEl = document.getElementById('modal-prod-calc-cost');
+      const splitEl = document.getElementById('modal-prod-calc-cost-split');
+      const marginEl = document.getElementById('modal-prod-calc-margin');
+      
+      if (costEl && marginEl) {
+        const taxa = DB.taxaHoraria || 60;
+        const tempoCiclo = parseFloat(document.getElementById('prod-cycle-time').value) || 0;
+        const fabrilCost = tempoCiclo * (taxa / 60);
+        const totalCost = totalBomCost + fabrilCost;
+        
+        costEl.innerText = totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        if (splitEl) splitEl.innerText = `MP: R$ ${totalBomCost.toFixed(2)} | Fabril: R$ ${fabrilCost.toFixed(2)}`;
+        
+        const salePrice = parseFloat(document.getElementById('prod-price').value) || 0;
+        const profit = salePrice - totalCost;
+        const marginPct = salePrice > 0 ? ((profit / salePrice) * 100).toFixed(1) : 0;
+        
+        marginEl.innerText = `${profit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${marginPct}%)`;
+        marginEl.className = profit >= 0 ? "text-base font-bold text-emerald-400" : "text-base font-bold text-rose-400";
+      }
+    }
+
+    // HELPER: RAW MATERIAL UNIT COST & PRODUCT BOM FABRICATION COST
+    function getMpCost(mp) {
+      if (!mp) return 0;
+      return mp.custo || 0;
+    }
+
+    function calculateProductCost(prod) {
+      if (!prod || !prod.bom || prod.bom.length === 0) return 0;
+      return prod.bom.reduce((acc, item) => {
+        const mp = DB.materias.find(m => m.id === item.mpId);
+        const cost = getMpCost(mp);
+        return acc + (cost * item.qtd);
+      }, 0);
+    }
+
+    // ==================== PRODUCT EDIT & TECHNICAL SHEET FUNCTIONS ====================
+    let currentProdSheetData = null;
+
+    function openModalCreateProduct() {
+      document.getElementById('form-prod').reset();
+      document.getElementById('prod-edit-id').value = '';
+      document.getElementById('modal-prod-title').innerText = 'Novo Produto Acabado';
+      document.getElementById('modal-prod-submit-btn').innerText = 'Salvar Produto';
+      currentBomList = [];
+      renderCurrentBom();
+      openModal('modal-prod');
+    }
+
+    function openModalEditProduct(prodId) {
+      const prod = DB.produtos.find(p => p.id === prodId);
+      if (!prod) return;
+
+      populateDropdowns();
+      document.getElementById('prod-edit-id').value = prod.id;
+      document.getElementById('prod-name').value = prod.nome;
+      document.getElementById('prod-price').value = prod.preco;
+      document.getElementById('prod-initial-stock').value = prod.estoque;
+      document.getElementById('prod-cycle-time').value = prod.tempoCicloMin;
+      document.getElementById('prod-setup-time').value = prod.tempoSetupMin || 0;
+
+      document.getElementById('modal-prod-title').innerText = `Editar Produto: ${prod.nome}`;
+      document.getElementById('modal-prod-submit-btn').innerText = 'Salvar Alterações';
+
+      currentBomList = (prod.bom || []).map(b => {
+        const mp = DB.materias.find(m => m.id === b.mpId);
+        return {
+          mpId: b.mpId,
+          qtd: b.qtd,
+          nome: mp ? mp.nome : 'Material Insumo',
+          unidade: mp ? mp.unidade : 'un',
+          custo: getMpCost(mp)
+        };
+      });
+
+      renderCurrentBom();
+      const modal = document.getElementById('modal-prod');
+      if (modal) modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function handleSaveProduct(e) {
+      e.preventDefault();
+      const editId = document.getElementById('prod-edit-id').value;
+      const nome = document.getElementById('prod-name').value;
+      const preco = parseFloat(document.getElementById('prod-price').value);
+      const estoque = parseInt(document.getElementById('prod-initial-stock').value) || 0;
+      const tempoCicloMin = parseFloat(document.getElementById('prod-cycle-time').value);
+      const tempoSetupMin = parseFloat(document.getElementById('prod-setup-time').value) || 0;
+      const bom = currentBomList.map(b => ({ mpId: b.mpId, qtd: b.qtd }));
+
+      if (editId) {
+        // Edit existing product
+        const prod = DB.produtos.find(p => p.id === parseInt(editId));
+        if (prod) {
+          prod.nome = nome;
+          prod.preco = preco;
+          prod.estoque = estoque;
+          prod.tempoCicloMin = tempoCicloMin;
+          prod.tempoSetupMin = tempoSetupMin;
+          prod.bom = bom;
+        }
+      } else {
+        // Create brand new product
+        const newProd = {
+          id: Date.now(),
+          nome,
+          preco,
+          estoque,
+          tempoCicloMin,
+          tempoSetupMin,
+          bom
+        };
+        DB.produtos.push(newProd);
+      }
+
+      saveDB();
+      closeModal('modal-prod');
+      document.getElementById('form-prod').reset();
+      currentBomList = [];
+      renderCurrentBom();
+      renderAll();
+    }
+
+    function openProductSheet(prodId) {
+      const prod = DB.produtos.find(p => p.id === prodId);
+      if (!prod) return;
+      currentProdSheetData = prod;
+
+      const taxa = DB.taxaHoraria || 60;
+      const tempoCiclo = prod.tempoCicloMin || 0;
+      const bomCost = calculateProductCost(prod);
+      const fabrilCost = tempoCiclo * (taxa / 60);
+      const totalCost = bomCost + fabrilCost;
+      
+      const profit = prod.preco - totalCost;
+      const marginPct = prod.preco > 0 ? ((profit / prod.preco) * 100).toFixed(1) : 0;
+      const ratePerHour = prod.tempoCicloMin > 0 ? (60 / prod.tempoCicloMin).toFixed(1) : 0;
+
+      document.getElementById('sheet-prod-code').innerText = `PROD #${prod.id}`;
+      document.getElementById('sheet-prod-date').innerText = `Revisão: ${new Date().toLocaleDateString('pt-BR')}`;
+      document.getElementById('sheet-p-name').innerText = prod.nome;
+      document.getElementById('sheet-p-price').innerText = prod.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('sheet-p-cost').innerText = totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('sheet-p-margin').innerText = `${profit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${marginPct}%)`;
+
+      document.getElementById('sheet-p-cycle').innerText = `${prod.tempoCicloMin || 0} min/un`;
+      document.getElementById('sheet-p-rate').innerText = `${ratePerHour} un/hora`;
+      document.getElementById('sheet-p-setup').innerText = `${prod.tempoSetupMin || 0} min`;
+
+      const tbody = document.getElementById('sheet-prod-bom-tbody');
+      if (!prod.bom || prod.bom.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-slate-500 italic">Nenhuma matéria-prima cadastrada na composição (BOM).</td></tr>';
+      } else {
+        tbody.innerHTML = prod.bom.map(b => {
+          const mp = DB.materias.find(m => m.id === b.mpId);
+          const unitCost = getMpCost(mp);
+          const totalCost = unitCost * b.qtd;
+          return `
+            <tr class="text-slate-800">
+              <td class="p-2 border-r border-slate-300 font-semibold">${mp ? mp.nome : 'Insumo'}</td>
+              <td class="p-2 border-r border-slate-300 text-right font-medium">${b.qtd}</td>
+              <td class="p-2 border-r border-slate-300 text-center">${mp ? mp.unidade : 'un'}</td>
+              <td class="p-2 border-r border-slate-300 text-right text-slate-600">${unitCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+              <td class="p-2 text-right font-bold text-slate-900">${totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('sheet-prod-bom-total').innerText = bomCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('sheet-prod-fabril-total').innerText = fabrilCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('sheet-prod-final-total').innerText = totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      openModal('modal-prod-sheet');
+    }
+
+    function downloadProductPdf() {
+      const element = document.getElementById('printable-prod-sheet');
+      const prodId = currentProdSheetData ? currentProdSheetData.id : '000';
+      const btn = document.getElementById('btn-download-prod-pdf');
+      const originalText = btn.innerHTML;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-block animate-spin mr-1">⌛</span> Gerando...';
+
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: 10,
+          filename: `Ficha_Tecnica_Produto_${prodId}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          lucide.createIcons();
+        }).catch(err => {
+          console.error("Erro ao gerar PDF do produto:", err);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          lucide.createIcons();
+        });
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        lucide.createIcons();
+      }
+    }
+
+    function printProductSheet() {
+      const sheet = document.getElementById('printable-prod-sheet');
+      const prodId = currentProdSheetData ? currentProdSheetData.id : '';
+      
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Ficha Técnica - Produto #${prodId}</title>
+            <script src="https://cdn.tailwindcss.com"><\/script>
+            <style>
+              @media print {
+                body { padding: 0; margin: 0; }
+              }
+              body { font-family: system-ui, -apple-system, sans-serif; background: #fff; color: #0f172a; padding: 24px; }
+            </style>
+          </head>
+          <body>
+            ${sheet.innerHTML}
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                }, 300);
+              };
+            <\/script>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } else {
+        window.print();
+      }
+    }
+
+    // ACTIONS
+    function handleCreateMP(e) {
+      e.preventDefault();
+      const newMp = {
+        id: Date.now(),
+        nome: document.getElementById('mp-name').value,
+        unidade: document.getElementById('mp-unit').value,
+        estoque: parseFloat(document.getElementById('mp-initial-stock').value) || 0,
+        estoqueMinimo: parseFloat(document.getElementById('mp-min-stock').value),
+        custo: parseFloat(document.getElementById('mp-cost').value),
+        loteMinimo: parseFloat(document.getElementById('mp-lot').value),
+        demandaAnual: parseFloat(document.getElementById('mp-demanda').value),
+        leadTime: parseInt(document.getElementById('mp-leadtime').value),
+        fornecedor: document.getElementById('mp-supplier-select').value
+      };
+      DB.materias.push(newMp);
+      saveDB();
+      closeModal('modal-mp');
+      document.getElementById('form-mp').reset();
+      renderAll();
+    }
+
+    function handleCreateOP(e) {
+      e.preventDefault();
+      const pId = parseInt(document.getElementById('op-product-select').value);
+      const prod = DB.produtos.find(p => p.id === pId);
+      const qty = parseInt(document.getElementById('op-qty').value);
+      const prazo = document.getElementById('op-due-date').value;
+
+      // Check BOM availability
+      let missingList = [];
+      if (prod.bom) {
+        prod.bom.forEach(item => {
+          const mp = DB.materias.find(m => m.id === item.mpId);
+          const needed = item.qtd * qty;
+          if (mp && mp.estoque < needed) {
+            missingList.push(`${mp.nome}: necessário ${needed} ${mp.unidade}, atual: ${mp.estoque}`);
+          }
+        });
+      }
+
+      if (missingList.length > 0) {
+        if (!confirm("Aviso de Falta de Estoque na BOM:\n\n" + missingList.join("\n") + "\n\nDeseja criar a OP mesmo assim para sequenciá-la no MES?")) {
+          return;
+        }
+      }
+
+      const newOp = {
+        id: (DB.ordens.length > 0 ? Math.max(...DB.ordens.map(o => o.id)) + 1 : 101),
+        produtoId: pId,
+        cliente: document.getElementById('op-client-select').value,
+        quantidade: qty,
+        status: "Aguardando Início",
+        prazo: prazo,
+        dataCriacao: new Date().toISOString().split('T')[0]
+      };
+
+      DB.ordens.push(newOp);
+      if (!DB.mesSequenceIds) DB.mesSequenceIds = [];
+      DB.mesSequenceIds.push(newOp.id);
+
+      saveDB();
+      closeModal('modal-op');
+      document.getElementById('form-op').reset();
+      renderAll();
+    }
+
+    function handleRegisterPurchase(e) {
+      e.preventDefault();
+      const mpId = parseInt(document.getElementById('compra-mp-select').value);
+      const qty = parseFloat(document.getElementById('compra-qty').value);
+      const nf = document.getElementById('compra-nf').value;
+      const mp = DB.materias.find(m => m.id === mpId);
+
+      mp.estoque += qty;
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      DB.kardex.unshift({
+        id: Date.now(),
+        data: now,
+        item: mp.nome,
+        tipo: "Matéria-Prima",
+        mov: "Entrada",
+        qtd: qty,
+        origem: "Compra",
+        nf: "NF-" + nf
+      });
+
+      saveDB();
+      closeModal('modal-compra');
+      document.getElementById('form-compra').reset();
+      renderAll();
+    }
+
+    function handleCreateSale(e) {
+      e.preventDefault();
+      const pId = parseInt(document.getElementById('venda-prod-select').value);
+      const prod = DB.produtos.find(p => p.id === pId);
+      const qty = parseInt(document.getElementById('venda-qty').value);
+      const cli = document.getElementById('venda-cliente-select').value;
+
+      if (prod.estoque < qty) {
+        alert(`Estoque insuficiente de ${prod.nome}. Disponível: ${prod.estoque} un.`);
+        return;
+      }
+
+      prod.estoque -= qty;
+      const total = qty * prod.preco;
+      const now = new Date().toISOString().substring(0, 10);
+      DB.vendas.unshift({
+        id: Date.now(),
+        cliente: cli,
+        produtoId: pId,
+        quantidade: qty,
+        valorTotal: total,
+        status: "Concluído",
+        data: now
+      });
+
+      DB.kardex.unshift({
+        id: Date.now(),
+        data: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        item: prod.nome,
+        tipo: "Produto",
+        mov: "Saída",
+        qtd: qty,
+        origem: "Venda Direta",
+        nf: "PED-" + Math.floor(1000 + Math.random() * 9000)
+      });
+
+      saveDB();
+      closeModal('modal-venda');
+      document.getElementById('form-venda').reset();
+      renderAll();
+    }
+
+    function handleCreateClient(e) {
+      e.preventDefault();
+      DB.clientes.push({
+        id: Date.now(),
+        nome: document.getElementById('cli-name').value,
+        email: document.getElementById('cli-email').value,
+        telefone: document.getElementById('cli-phone').value,
+        endereco: document.getElementById('cli-address').value || '-'
+      });
+      saveDB();
+      closeModal('modal-cliente');
+      document.getElementById('form-cliente').reset();
+      renderAll();
+    }
+
+    function handleCreateSupplier(e) {
+      e.preventDefault();
+      DB.fornecedores.push({
+        id: Date.now(),
+        nome: document.getElementById('forn-name').value,
+        contato: document.getElementById('forn-contact').value
+      });
+      saveDB();
+      closeModal('modal-fornecedor');
+      document.getElementById('form-fornecedor').reset();
+      renderAll();
+    }
+
+    function completeOP(opId) {
+      const op = DB.ordens.find(o => o.id === opId);
+      if (!op || op.status === "Concluída") return;
+      const prod = DB.produtos.find(p => p.id === op.produtoId);
+
+      // Verify materials
+      for (let item of (prod.bom || [])) {
+        const mp = DB.materias.find(m => m.id === item.mpId);
+        const needed = item.qtd * op.quantidade;
+        if (mp.estoque < needed) {
+          alert(`Impossível concluir OP: Estoque insuficiente de ${mp.nome} (${mp.estoque} atual vs ${needed} necessário).`);
+          return;
+        }
+      }
+
+      // Deduct BOM from stock
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      (prod.bom || []).forEach(item => {
+        const mp = DB.materias.find(m => m.id === item.mpId);
+        const needed = item.qtd * op.quantidade;
+        mp.estoque -= needed;
+        DB.kardex.unshift({
+          id: Date.now() + Math.random(),
+          data: now,
+          item: mp.nome,
+          tipo: "Matéria-Prima",
+          mov: "Saída",
+          qtd: needed,
+          origem: "Produção",
+          nf: "OP-" + op.id
+        });
+      });
+
+      // Add finished product to inventory
+      prod.estoque += op.quantidade;
+      DB.kardex.unshift({
+        id: Date.now() + Math.random(),
+        data: now,
+        item: prod.nome,
+        tipo: "Produto",
+        mov: "Entrada",
+        qtd: op.quantidade,
+        origem: "Produção",
+        nf: "OP-" + op.id
+      });
+
+      op.status = "Concluída";
+      saveDB();
+      renderAll();
+    }
+
+    // ==================== MES / APS LOGIC ====================
+    function getActiveOps() {
+      const activeOps = DB.ordens.filter(o => o.status !== "Concluída");
+      if (!DB.mesSequenceIds) DB.mesSequenceIds = activeOps.map(o => o.id);
+
+      const activeIds = activeOps.map(o => o.id);
+      DB.mesSequenceIds = DB.mesSequenceIds.filter(id => activeIds.includes(id));
+      activeIds.forEach(id => {
+        if (!DB.mesSequenceIds.includes(id)) DB.mesSequenceIds.push(id);
+      });
+
+      return DB.mesSequenceIds.map(id => activeOps.find(o => o.id === id)).filter(Boolean);
+    }
+
+    function calculateMESSchedule(opsList) {
+      let timeline = [];
+      let currentTime = 0;
+      let totalSetup = 0;
+      let previousProductId = null;
+      let totalFlowTime = 0;
+      let delayedOpsCount = 0;
+
+      opsList.forEach((op, index) => {
+        const prod = DB.produtos.find(p => p.id === op.produtoId) || { tempoCicloMin: 10, tempoSetupMin: 30 };
+        const procTime = (prod.tempoCicloMin || 10) * op.quantidade;
+        let setupTime = 0;
+
+        if (index === 0) {
+          setupTime = prod.tempoSetupMin || 0;
+        } else if (op.produtoId !== previousProductId) {
+          setupTime = prod.tempoSetupMin || 30;
+        } else {
+          setupTime = 0;
+        }
+
+        const startSetup = currentTime;
+        const endSetup = startSetup + setupTime;
+        const startProc = endSetup;
+        const endProc = startProc + procTime;
+        currentTime = endProc;
+        totalSetup += setupTime;
+
+        totalFlowTime += endProc;
+
+        const scheduledDays = Math.ceil(endProc / 480);
+        const today = new Date();
+        const dueDate = new Date(op.prazo);
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        const isLate = scheduledDays > Math.max(diffDays, 1);
+        if (isLate) delayedOpsCount++;
+
+        timeline.push({
+          op,
+          prod,
+          setupTime,
+          procTime,
+          startSetup,
+          endSetup,
+          startProc,
+          endProc,
+          isLate
+        });
+
+        previousProductId = op.produtoId;
+      });
+
+      return {
+        timeline,
+        makespan: currentTime,
+        totalSetup,
+        avgFlowTime: opsList.length > 0 ? (totalFlowTime / opsList.length).toFixed(1) : 0,
+        delayedOpsCount,
+        totalOps: opsList.length
+      };
+    }
+
+    function applyHeuristic(type) {
+      let active = getActiveOps();
+      if (active.length === 0) return;
+
+      if (type === 'FIFO') {
+        active.sort((a, b) => a.id - b.id);
+      } else if (type === 'SPT') {
+        active.sort((a, b) => {
+          const pa = DB.produtos.find(p => p.id === a.produtoId);
+          const pb = DB.produtos.find(p => p.id === b.produtoId);
+          return (pa.tempoCicloMin * a.quantidade) - (pb.tempoCicloMin * b.quantidade);
+        });
+      } else if (type === 'EDD') {
+        active.sort((a, b) => new Date(a.prazo) - new Date(b.prazo));
+      } else if (type === 'SETUP') {
+        active.sort((a, b) => a.produtoId - b.produtoId);
+      }
+
+      DB.mesSequenceIds = active.map(o => o.id);
+      saveDB();
+      renderMES();
+    }
+
+    function moveOrderInQueue(idx, direction) {
+      const active = getActiveOps();
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= active.length) return;
+
+      const temp = active[idx];
+      active[idx] = active[targetIdx];
+      active[targetIdx] = temp;
+
+      DB.mesSequenceIds = active.map(o => o.id);
+      saveDB();
+      renderMES();
+    }
+
+    function renderMES() {
+      const activeOps = getActiveOps();
+      const schedule = calculateMESSchedule(activeOps);
+
+      document.getElementById('mes-queue-count').innerText = `${activeOps.length} ordens na fila`;
+      document.getElementById('mes-kpi-makespan').innerText = `${schedule.makespan} min (${(schedule.makespan / 60).toFixed(1)} h)`;
+      document.getElementById('mes-kpi-setup').innerText = `${schedule.totalSetup} min`;
+      const setupPct = schedule.makespan > 0 ? ((schedule.totalSetup / schedule.makespan) * 100).toFixed(1) : 0;
+      document.getElementById('mes-kpi-setup-pct').innerText = `${setupPct}% do tempo é parada`;
+      document.getElementById('mes-kpi-flow').innerText = `${schedule.avgFlowTime} min`;
+      document.getElementById('mes-kpi-delay').innerText = `${schedule.delayedOpsCount} / ${schedule.totalOps} ordens`;
+
+      const delayBadge = document.getElementById('mes-kpi-delay-badge');
+      if (schedule.delayedOpsCount > 0) {
+        delayBadge.className = "text-xs text-rose-400 font-semibold";
+        delayBadge.innerText = `Atenção: ${schedule.delayedOpsCount} ordem(ns) em risco de atraso`;
+      } else {
+        delayBadge.className = "text-xs text-emerald-400 font-semibold";
+        delayBadge.innerText = "Todas as ordens no prazo previsto";
+      }
+
+      // Gantt container
+      const gantt = document.getElementById('mes-gantt-container');
+      if (schedule.timeline.length === 0) {
+        gantt.innerHTML = '<div class="text-sm text-slate-500 py-3 italic">Nenhuma ordem de produção pendente na fila.</div>';
+      } else {
+        const total = schedule.makespan || 1;
+        gantt.innerHTML = schedule.timeline.map(item => {
+          let html = '';
+          if (item.setupTime > 0) {
+            html += `
+              <div style="flex: ${item.setupTime} 0 auto; min-width: 50px;" class="h-12 bg-amber-500 hover:bg-amber-400 rounded-lg flex flex-col justify-center items-center text-slate-950 font-bold text-[11px] px-2 shadow transition" title="Setup Linha: ${item.setupTime} min">
+                <span class="truncate">SETUP</span>
+                <span class="text-[9px] font-semibold opacity-90">${item.setupTime}m</span>
+              </div>
+            `;
+          }
+          html += `
+            <div style="flex: ${item.procTime} 0 auto; min-width: 90px;" class="h-12 ${item.isLate ? 'bg-rose-600' : 'bg-blue-600'} hover:opacity-90 text-white rounded-lg flex flex-col justify-center items-center font-bold text-xs px-2 shadow transition" title="OP #${item.op.id} - ${item.prod.nome} (${item.procTime} min)">
+              <span class="truncate">OP #${item.op.id}</span>
+              <span class="text-[10px] font-normal opacity-90 truncate max-w-full">${item.prod.nome} (${item.procTime}m)</span>
+            </div>
+          `;
+          return html;
+        }).join('');
+      }
+
+      // Table
+      const tbody = document.getElementById('mes-table-body');
+      if (schedule.timeline.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center py-6 text-slate-500">Nenhuma ordem ativa para sequenciamento.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = schedule.timeline.map((item, idx) => `
+        <tr class="hover:bg-slate-900/60 transition">
+          <td class="px-4 py-3 text-center">
+            <span class="w-6 h-6 rounded-full bg-slate-950 text-white inline-flex items-center justify-center text-xs font-bold border border-slate-700">${idx + 1}</span>
+          </td>
+          <td class="px-4 py-3 font-semibold text-white">OP #${item.op.id}</td>
+          <td class="px-4 py-3 text-slate-200">${item.prod.nome}</td>
+          <td class="px-4 py-3 text-right font-medium">${item.op.quantidade} un</td>
+          <td class="px-4 py-3 text-right text-blue-400 font-semibold">${item.procTime}m</td>
+          <td class="px-4 py-3 text-right ${item.setupTime > 0 ? 'text-amber-400 font-semibold' : 'text-slate-500'}">${item.setupTime}m</td>
+          <td class="px-4 py-3 text-right text-slate-400 font-mono text-xs">${item.startProc}m</td>
+          <td class="px-4 py-3 text-right font-bold text-white font-mono text-xs">${item.endProc}m</td>
+          <td class="px-4 py-3 text-slate-300 text-xs">${item.op.prazo || '-'}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${item.isLate ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
+              ${item.isLate ? 'Risco de Atraso' : 'No Prazo'}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="moveOrderInQueue(${idx}, -1)" ${idx === 0 ? 'disabled class="opacity-20"' : 'class="hover:text-blue-400 p-1"'} title="Subir Prioridade">
+                <i data-lucide="arrow-up-circle" class="w-4 h-4"></i>
+              </button>
+              <button onclick="moveOrderInQueue(${idx}, 1)" ${idx === schedule.timeline.length - 1 ? 'disabled class="opacity-20"' : 'class="hover:text-blue-400 p-1"'} title="Descer Prioridade">
+                <i data-lucide="arrow-down-circle" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openOpSheet(${item.op.id})" class="p-1 text-blue-400 hover:text-blue-300" title="Imprimir Ficha da OP">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+              </button>
+              <button onclick="completeOP(${item.op.id})" class="ml-2 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg shadow flex items-center gap-1">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> Concluir
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // ==================== GENERAL RENDERING ====================
+    function renderAll() {
+      renderDashboard();
+      renderOrdensTable();
+      renderProdutosTable();
+      renderMateriasTable();
+      renderKardexTable();
+      renderSugestoes();
+      renderVendasTable();
+      renderClientesTable();
+      renderFornecedoresTable();
+      renderMES();
+      lucide.createIcons();
+    }
+
+    function renderDashboard() {
+      document.getElementById('kpi-mp-count').innerText = DB.materias.length;
+      document.getElementById('kpi-prod-count').innerText = DB.produtos.length;
+      document.getElementById('kpi-client-count').innerText = DB.clientes.length;
+      document.getElementById('kpi-supplier-count').innerText = DB.fornecedores.length;
+
+      const activeOps = DB.ordens.filter(o => o.status !== "Concluída");
+      document.getElementById('kpi-op-active').innerText = activeOps.length;
+      document.getElementById('dash-active-ops').innerText = activeOps.length;
+      document.getElementById('dash-wait-ops').innerText = activeOps.filter(o => o.status === "Aguardando Início").length;
+      document.getElementById('dash-prog-ops').innerText = activeOps.filter(o => o.status === "Em Produção").length;
+      document.getElementById('dash-done-ops').innerText = DB.ordens.filter(o => o.status === "Concluída").length;
+
+      const belowMinMPs = DB.materias.filter(m => m.estoque < m.estoqueMinimo);
+      document.getElementById('kpi-alerts-count').innerText = belowMinMPs.length;
+      document.getElementById('dash-stock-items').innerText = DB.materias.length;
+      document.getElementById('dash-stock-below').innerText = belowMinMPs.length;
+      document.getElementById('dash-stock-normal').innerText = DB.materias.length - belowMinMPs.length;
+
+      const banner = document.getElementById('global-stock-alert');
+      if (belowMinMPs.length > 0) {
+        banner.classList.remove('hidden');
+        document.getElementById('global-stock-alert-text').innerHTML = `<strong>Atenção!</strong> Existem <strong>${belowMinMPs.length} matéria(s)-prima(s)</strong> abaixo do estoque mínimo. Verifique as Sugestões de Compra.`;
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      let totalStockValue = DB.materias.reduce((acc, m) => acc + (m.estoque * m.custo), 0);
+      document.getElementById('kpi-stock-val').innerText = totalStockValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      let totalSales = DB.vendas.reduce((acc, v) => acc + v.valorTotal, 0);
+      document.getElementById('kpi-sales-val').innerText = totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function renderOrdensTable() {
+      const tbody = document.getElementById('op-table-body');
+      tbody.innerHTML = DB.ordens.map(op => {
+        const prod = DB.produtos.find(p => p.id === op.produtoId) || { nome: 'Item Removido' };
+        const isDone = op.status === "Concluída";
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="px-6 py-4 font-semibold text-white">OP #${op.id}</td>
+            <td class="px-6 py-4 text-slate-200">${prod.nome}</td>
+            <td class="px-6 py-4 text-slate-400 italic">${op.cliente}</td>
+            <td class="px-6 py-4 text-right font-bold text-white">${op.quantidade} un</td>
+            <td class="px-6 py-4 text-slate-300 text-xs">${op.prazo || '-'}</td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${isDone ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}">
+                ${op.status}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right space-x-1.5">
+              <button onclick="openOpSheet(${op.id})" class="px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-xs font-medium rounded-lg border border-blue-500/30 transition inline-flex items-center gap-1" title="Visualizar e Imprimir Ficha de Produção">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> Ficha
+              </button>
+              ${!isDone ? `
+                <button onclick="completeOP(${op.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg shadow transition">
+                  Concluir OP
+                </button>
+              ` : '<span class="text-xs text-slate-500 italic pr-2">Concluída</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function renderProdutosTable() {
+      const tbody = document.getElementById('prod-table-body');
+      if (!tbody) return;
+      
+      const taxa = DB.taxaHoraria || 60;
+      const taxaInput = document.getElementById('taxa-horaria-input');
+      if (taxaInput) taxaInput.value = taxa;
+
+      tbody.innerHTML = DB.produtos.map(p => {
+        const bomCost = calculateProductCost(p);
+        const tempoCiclo = p.tempoCicloMin || 0;
+        const fabrilCost = tempoCiclo * (taxa / 60);
+        const totalCost = bomCost + fabrilCost;
+        
+        const profit = p.preco - totalCost;
+        const marginPct = p.preco > 0 ? ((profit / p.preco) * 100).toFixed(1) : 0;
+        const bomCount = (p.bom || []).length;
+
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="px-6 py-4 font-semibold text-white">${p.nome}</td>
+            <td class="px-6 py-4 text-right">
+              <span class="font-bold text-amber-400">${totalCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+              <span class="text-[10px] block text-slate-400 mt-0.5">MP: R$ ${bomCost.toFixed(2)} | Fabril: R$ ${fabrilCost.toFixed(2)}</span>
+            </td>
+            <td class="px-6 py-4 text-right font-bold text-emerald-400">${p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+            <td class="px-6 py-4 text-right">
+              <span class="text-xs font-bold ${profit >= 0 ? 'text-blue-400' : 'text-rose-400'}">
+                ${profit.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                <span class="text-[10px] block font-normal opacity-80">(${marginPct}%)</span>
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right font-medium text-slate-200">${p.estoque} un</td>
+            <td class="px-6 py-4 text-right text-blue-400">${p.tempoCicloMin || 0} min</td>
+            <td class="px-6 py-4 text-right text-amber-400">${p.tempoSetupMin || 0} min</td>
+            <td class="px-6 py-4 text-xs text-slate-400">
+              <span class="bg-slate-950 px-2 py-1 rounded border border-slate-700">
+                ${bomCount} insumo(s)
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right space-x-1">
+              <button onclick="openProductSheet(${p.id})" class="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition" title="Ficha Técnica (PDF/Imprimir)">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+              </button>
+              <button onclick="openModalEditProduct(${p.id})" class="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded-lg transition" title="Editar Produto">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+              </button>
+              <button onclick="deleteProduct(${p.id})" class="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition" title="Excluir Produto">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function deleteProduct(id) {
+      if (confirm("Excluir este produto?")) {
+        DB.produtos = DB.produtos.filter(p => p.id !== id);
+        saveDB();
+        renderAll();
+      }
+    }
+
+    function renderMateriasTable() {
+      const tbody = document.getElementById('mp-table-body');
+      tbody.innerHTML = DB.materias.map(m => {
+        const isLow = m.estoque < m.estoqueMinimo;
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="px-6 py-4 font-semibold text-white">${m.nome}</td>
+            <td class="px-6 py-4 text-right font-bold ${isLow ? 'text-rose-400' : 'text-white'}">${m.estoque}</td>
+            <td class="px-6 py-4 text-right text-slate-400">${m.estoqueMinimo}</td>
+            <td class="px-6 py-4 text-slate-300">${m.unidade}</td>
+            <td class="px-6 py-4 text-right text-slate-200">${m.custo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+            <td class="px-6 py-4 text-slate-300">${m.fornecedor || '-'}</td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${isLow ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
+                ${isLow ? 'Baixo' : 'Normal'}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button onclick="deleteMP(${m.id})" class="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition" title="Excluir Matéria-Prima">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function deleteMP(id) {
+      if (confirm("Excluir esta matéria-prima?")) {
+        DB.materias = DB.materias.filter(m => m.id !== id);
+        saveDB();
+        renderAll();
+      }
+    }
+
+    function renderKardexTable() {
+      const filter = document.getElementById('kardex-filter').value;
+      const tbody = document.getElementById('kardex-table-body');
+      const filtered = filter === 'all' ? DB.kardex : DB.kardex.filter(k => k.item === filter);
+
+      tbody.innerHTML = filtered.map(k => `
+        <tr class="hover:bg-slate-900/60 transition">
+          <td class="px-4 py-3 text-xs text-slate-400 font-mono">${k.data}</td>
+          <td class="px-4 py-3 font-semibold text-white">${k.item}</td>
+          <td class="px-4 py-3 text-slate-400 text-xs">${k.tipo}</td>
+          <td class="px-4 py-3">
+            <span class="inline-flex items-center gap-1 font-semibold text-xs ${k.mov === 'Entrada' ? 'text-emerald-400' : 'text-rose-400'}">
+              <i data-lucide="${k.mov === 'Entrada' ? 'arrow-down-left' : 'arrow-up-right'}" class="w-3.5 h-3.5"></i> ${k.mov}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right font-bold text-white">${k.qtd}</td>
+          <td class="px-4 py-3 text-center">
+            <span class="px-2 py-0.5 text-[11px] rounded font-medium bg-slate-950 text-slate-300 border border-slate-700">${k.origem}</span>
+          </td>
+          <td class="px-4 py-3 text-slate-400 text-xs">${k.nf || '-'}</td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function renderSugestoes() {
+      const container = document.getElementById('sugestoes-cards-container');
+      const lowItems = DB.materias.filter(m => m.estoque < m.estoqueMinimo);
+      const badge = document.getElementById('badge-sugestoes');
+
+      badge.innerText = lowItems.length;
+      if (lowItems.length > 0) {
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      if (lowItems.length === 0) {
+        container.innerHTML = '<div class="col-span-full bg-slate-800/80 p-8 rounded-2xl border border-slate-700 text-center text-slate-400">Nenhum item abaixo do estoque mínimo. Todos os insumos em nível seguro!</div>';
+        return;
+      }
+
+      container.innerHTML = lowItems.map(m => {
+        // Lote Econômico de Compras (LEC / EOQ)
+        const D = m.demandaAnual || (m.estoqueMinimo * 12);
+        const S = 50; // Custo do Pedido fixo
+        const H = Math.max((m.custo || 0) * 0.20, 0.01); // 20% do custo unitário a.a.
+        const EOQ = Math.round(Math.sqrt((2 * D * S) / H));
+        const suggestedQty = Math.max(EOQ, m.loteMinimo || 100);
+        const loteMinWarning = suggestedQty > EOQ;
+
+        return `
+          <div class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700/80 shadow flex flex-col justify-between space-y-4 relative">
+            <div>
+              <div class="flex items-center justify-between">
+                <h4 class="font-bold text-white text-lg">${m.nome}</h4>
+                <span class="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold rounded-full">Reposição Urgente</span>
+              </div>
+              <div class="grid grid-cols-2 gap-4 mt-4 text-sm">
+                <div>
+                  <span class="text-xs text-slate-400 block">Estoque Atual:</span>
+                  <span class="text-xl font-bold text-rose-400">${m.estoque} ${m.unidade}</span>
+                </div>
+                <div>
+                  <span class="text-xs text-slate-400 block">Estoque Mínimo:</span>
+                  <span class="text-xl font-bold text-slate-200">${m.estoqueMinimo} ${m.unidade}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-xl">
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-emerald-300 font-bold uppercase tracking-wider">Sugestão de Compra:</span>
+                <button onclick="document.getElementById('lec-info-${m.id}').classList.toggle('hidden')" class="text-[10px] bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-2 py-1 rounded transition flex items-center gap-1 border border-emerald-500/30">
+                  <i data-lucide="calculator" class="w-3 h-3"></i> Entender Cálculo
+                </button>
+              </div>
+              <div class="text-3xl font-black text-emerald-400 mt-1">${suggestedQty} ${m.unidade}</div>
+              
+              <!-- DIDÁTICA DO CÁLCULO DE LOTE ECONÔMICO -->
+              <div id="lec-info-${m.id}" class="hidden mt-3 pt-3 border-t border-emerald-500/20 text-[11px] text-emerald-100 space-y-2">
+                <p class="font-semibold text-emerald-300">Como chegamos neste valor?</p>
+                <p class="leading-relaxed">O <strong>Lote Econômico de Compras (LEC)</strong> equilibra o custo de emitir muitos pedidos e o custo de armazenar muito estoque.</p>
+                <ul class="list-disc pl-4 space-y-1 opacity-90">
+                  <li><strong>D (Demanda Anual):</strong> ${D} ${m.unidade}</li>
+                  <li><strong>S (Custo de Pedido):</strong> R$ ${S.toFixed(2)}/pedido</li>
+                  <li><strong>H (Custo de Posse 20% a.a):</strong> R$ ${H.toFixed(2)}/un.ano</li>
+                </ul>
+                <div class="bg-emerald-950/60 p-2 rounded text-center font-mono mt-2 border border-emerald-500/20">
+                  LEC = &radic; (2 &times; ${D} &times; ${S} / ${H.toFixed(2)}) = ${EOQ} un
+                </div>
+                ${loteMinWarning ? `<div class="text-rose-400 mt-2 font-semibold bg-rose-500/10 p-2 rounded border border-rose-500/20 flex gap-1.5"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 shrink-0 mt-0.5"></i> <span>Ajustado para ${suggestedQty} un para atender a restrição de Lote Mínimo do Fornecedor (${m.loteMinimo} un).</span></div>` : ''}
+              </div>
+
+              <div class="text-xs text-emerald-300/80 mt-3 pt-2 border-t border-emerald-500/10 flex justify-between">
+                <span>Lote Mín: ${m.loteMinimo} ${m.unidade}</span>
+                <span>Lead Time: ${m.leadTime} dias</span>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-700 flex items-center justify-between text-xs text-slate-400">
+              <span>Fornecedor: <strong class="text-slate-200">${m.fornecedor || 'Não definido'}</strong></span>
+              <button onclick="quickBuySuggestion(${m.id}, ${suggestedQty})" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold flex items-center gap-1 shadow transition">
+                <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i> Comprar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function quickBuySuggestion(mpId, qty) {
+      const nf = Math.floor(10000 + Math.random() * 90000);
+      const mp = DB.materias.find(m => m.id === mpId);
+      mp.estoque += qty;
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+      DB.kardex.unshift({
+        id: Date.now(),
+        data: now,
+        item: mp.nome,
+        tipo: "Matéria-Prima",
+        mov: "Entrada",
+        qtd: qty,
+        origem: "Compra Sugerida",
+        nf: "NF-" + nf
+      });
+      saveDB();
+      renderAll();
+      alert(`Compra de ${qty} ${mp.unidade} de ${mp.nome} confirmada e estocada (NF-${nf})!`);
+    }
+
+    function renderVendasTable() {
+      const tbody = document.getElementById('vendas-table-body');
+      tbody.innerHTML = DB.vendas.map(v => {
+        const prod = DB.produtos.find(p => p.id === v.produtoId) || { nome: 'Produto' };
+        return `
+          <tr class="hover:bg-slate-900/60 transition">
+            <td class="px-6 py-4 font-semibold text-white">${v.cliente}</td>
+            <td class="px-6 py-4 text-slate-200">${prod.nome}</td>
+            <td class="px-6 py-4 text-right font-medium text-white">${v.quantidade} un</td>
+            <td class="px-6 py-4 text-right font-bold text-emerald-400">${v.valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${v.status}</span>
+            </td>
+            <td class="px-6 py-4 text-slate-400 text-xs">${v.data}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderClientesTable() {
+      const tbody = document.getElementById('clientes-table-body');
+      tbody.innerHTML = DB.clientes.map(c => `
+        <tr class="hover:bg-slate-900/60 transition">
+          <td class="px-6 py-4 font-semibold text-white">${c.nome}</td>
+          <td class="px-6 py-4 text-slate-300">${c.email}</td>
+          <td class="px-6 py-4 text-slate-300">${c.telefone}</td>
+          <td class="px-6 py-4 text-slate-400">${c.endereco}</td>
+          <td class="px-6 py-4 text-right">
+            <button onclick="deleteClient(${c.id})" class="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function deleteClient(id) {
+      if (confirm("Excluir cliente?")) {
+        DB.clientes = DB.clientes.filter(c => c.id !== id);
+        saveDB();
+        renderAll();
+      }
+    }
+
+    function renderFornecedoresTable() {
+      const tbody = document.getElementById('fornecedores-table-body');
+      tbody.innerHTML = DB.fornecedores.map(f => `
+        <tr class="hover:bg-slate-900/60 transition">
+          <td class="px-6 py-4 font-semibold text-white">${f.nome}</td>
+          <td class="px-6 py-4 text-slate-300">${f.contato}</td>
+          <td class="px-6 py-4 text-right">
+            <button onclick="deleteSupplier(${f.id})" class="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function deleteSupplier(id) {
+      if (confirm("Excluir fornecedor?")) {
+        DB.fornecedores = DB.fornecedores.filter(f => f.id !== id);
+        saveDB();
+        renderAll();
+      }
+    }
+
+    // ==================== CSV IMPORT / EXPORT LOGIC ====================
+
+    function downloadMpCsvTemplate() {
+      // Create CSV content (Windows-1252/UTF-8 friendly with BOM)
+      const header = "Nome;Unidade_Medida;Custo_Unitario;Estoque_Atual;Estoque_Minimo\n";
+      const example = "Chapa de Aço 1020 5mm;un;85,50;150;50\nTinta PU Branca;litros;42,30;80;20\n";
+      // Adding BOM (\uFEFF) forces Excel to interpret as UTF-8 properly avoiding accent issues
+      const blob = new Blob(["\uFEFF" + header + example], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "modelo_importacao_materias_primas.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function handleImportMP(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length <= 1) {
+          alert("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
+          event.target.value = '';
+          return;
+        }
+
+        let importedCount = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(';');
+          if (cols.length >= 5) {
+            const nome = cols[0].trim();
+            const unidade = cols[1].trim();
+            // Handle BR decimal formats automatically (converte vírgula para ponto)
+            const custo = parseFloat(cols[2].replace(',', '.'));
+            const estoque = parseFloat(cols[3].replace(',', '.'));
+            const estoqueMinimo = parseFloat(cols[4].replace(',', '.'));
+
+            if (nome && !isNaN(custo)) {
+              DB.materias.push({
+                id: Date.now() + i, 
+                nome,
+                unidade,
+                custo,
+                estoque: isNaN(estoque) ? 0 : estoque,
+                estoqueMinimo: isNaN(estoqueMinimo) ? 0 : estoqueMinimo,
+                loteMinimo: 1, // Defaulting as these were not in simple CSV
+                demandaAnual: 5000, 
+                leadTime: 3, 
+                fornecedor: ""
+              });
+              importedCount++;
+            }
+          }
+        }
+        saveDB();
+        renderAll();
+        alert(`Sucesso! ${importedCount} matérias-primas importadas.`);
+        event.target.value = ''; // reset input
+      };
+      // Read as UTF-8
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function downloadProdCsvTemplate() {
+      const header = "Nome;Preco_Venda;Tempo_Ciclo_Min;Tempo_Setup_Min;BOM_Materiais\n";
+      // BOM Explanation: MaterialName:Qty|OtherMaterialName:Qty
+      const example = "Mesa Office Industrial;850,00;45;30;Chapa Aço 1020 2mm:1|Parafuso Sextavado M8:12\nEstante Minimalista;420,00;25;15;Tecido Linho Bege:2\n";
+      const blob = new Blob(["\uFEFF" + header + example], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "modelo_importacao_produtos.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function handleImportProd(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length <= 1) {
+          alert("O arquivo CSV está vazio ou contém apenas o cabeçalho.");
+          event.target.value = '';
+          return;
+        }
+
+        let importedCount = 0;
+        let errors = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(';');
+          if (cols.length >= 5) {
+            const nome = cols[0].trim();
+            const preco = parseFloat(cols[1].replace(',', '.'));
+            const tempoCicloMin = parseFloat(cols[2].replace(',', '.'));
+            const tempoSetupMin = parseFloat(cols[3].replace(',', '.'));
+            const bomStr = cols[4].trim();
+
+            if (!nome || isNaN(preco)) continue;
+
+            let bom = [];
+            let missingMaterials = [];
+            
+            if (bomStr && bomStr !== "") {
+              const items = bomStr.split('|');
+              for (const item of items) {
+                // Validação amigável se faltar os dois pontos (:)
+                if (!item.includes(':')) {
+                   if (item.trim() !== "") missingMaterials.push(`${item.trim()} (Falta o separador ':')`);
+                   continue;
+                }
+                
+                const [matNameRaw, matQtyStr] = item.split(':');
+                const matName = matNameRaw ? matNameRaw.trim() : "";
+                const qtyStr = matQtyStr ? matQtyStr.trim() : "";
+                
+                if (matName && qtyStr) {
+                  // Função para normalizar: remove espaços do início/fim, deixa minúsculo 
+                  // e reduz múltiplos espaços no meio para um único espaço.
+                  const normalizeName = (name) => name.trim().toLowerCase().replace(/\s+/g, ' ');
+                  
+                  // Busca ignorando qualquer diferença boba de digitação (Case-Insensitive e Space-Insensitive)
+                  const mp = DB.materias.find(m => normalizeName(m.nome) === normalizeName(matName));
+                  
+                  if (mp) {
+                    bom.push({
+                      mpId: mp.id,
+                      // Garante que quantidades da BOM como 0,5 ou 1,2 funcionem perfeitamente
+                      qtd: parseFloat(qtyStr.replace(',', '.'))
+                    });
+                  } else {
+                    missingMaterials.push(matName);
+                  }
+                }
+              }
+            }
+
+            if (missingMaterials.length > 0) {
+              errors.push(`- Produto "${nome}" ignorado: Materiais não encontrados no estoque (${missingMaterials.join(', ')})`);
+            } else {
+              DB.produtos.push({
+                id: Date.now() + i,
+                nome,
+                preco,
+                estoque: 0, // Starts at zero stock
+                tempoCicloMin: isNaN(tempoCicloMin) ? 10 : tempoCicloMin,
+                tempoSetupMin: isNaN(tempoSetupMin) ? 30 : tempoSetupMin,
+                bom
+              });
+              importedCount++;
+            }
+          }
+        }
+        
+        saveDB();
+        renderAll();
+        
+        if (errors.length > 0) {
+          alert(`Foram importados ${importedCount} produtos.\n\nAvisos de inconsistência (não importados):\n${errors.join('\n')}`);
+        } else {
+          alert(`Sucesso! ${importedCount} produtos importados e suas BOMs foram estruturadas.`);
+        }
+        event.target.value = ''; // reset input
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+
+    // BI REPORTS
+    let chartInstance = null;
+    function renderRelatorios() {
+      const doneOps = DB.ordens.filter(o => o.status === "Concluída");
+      document.getElementById('rep-total-ops').innerText = doneOps.length;
+
+      const counts = {};
+      DB.produtos.forEach(p => counts[p.nome] = 0);
+      doneOps.forEach(op => {
+        const prod = DB.produtos.find(p => p.id === op.produtoId);
+        if (prod) counts[prod.nome] = (counts[prod.nome] || 0) + op.quantidade;
+      });
+
+      let topProd = '-';
+      let maxVal = -1;
+      for (let k in counts) {
+        if (counts[k] > maxVal && counts[k] > 0) {
+          maxVal = counts[k];
+          topProd = `${k} (${counts[k]} un)`;
+        }
+      }
+      document.getElementById('rep-top-prod').innerText = topProd;
+
+      const totalRev = DB.vendas.reduce((acc, v) => acc + v.valorTotal, 0);
+      document.getElementById('rep-total-rev').innerText = totalRev.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      const ctx = document.getElementById('chart-prod-volume').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(counts),
+          datasets: [{
+            label: 'Unidades Concluídas',
+            data: Object.values(counts),
+            backgroundColor: '#3b82f6',
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+            x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+          }
+        }
+      });
+    }
+
+    // INITIAL LOAD
+    window.onload = () => {
+      renderAll();
+    };
+  </script>
+</body>
+</html>
